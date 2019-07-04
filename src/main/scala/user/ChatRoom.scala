@@ -24,7 +24,8 @@ private class ChatRoom extends Actor {
   }
 
   private def router = {
-    val paths = List("akka.tcp://unichat-system@127.0.0.2:2552/user/messenger-actor/uni/frank")
+    val paths = List("akka.tcp://unichat-system@127.0.0.2:2553/user/messenger-actor/uni/frank",
+      "akka.tcp://unichat-system@127.0.0.2:2552/user/messenger-actor/uni/azzu")
     context.actorOf(BroadcastGroup(paths).props(), "router")
   }
 
@@ -34,5 +35,5 @@ object ChatRoom {
   def props: Props = Props(new ChatRoom)
 
   final case class JoinInChatRoom(username: String, chatRoom: String)
-
+  final case class Failure(username: String)
 }
