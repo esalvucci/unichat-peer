@@ -1,7 +1,17 @@
 import akka.actor.ActorSystem
+import com.typesafe.config.ConfigFactory
 import ui.MessageActor
+import utility.Network
 
 object UniChatApp extends App {
-  val system = ActorSystem("unichat-system")
-  system.actorOf(MessageActor.props, "messenger-actor")
+  val messageActorName = "messenger-actor"
+  val actorSystemName = "unichat-system"
+
+  val configurationWithAddressAndPort =
+    ConfigFactory.parseString("akka.remote.netty.tcp.hostname = \"" + Network.lanAddress + "\"")
+      .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.port=" + Network.defaultPort))
+      .withFallback(ConfigFactory.load())
+
+  val actorSystem = ActorSystem.create(actorSystemName, configurationWithAddressAndPort)
+  actorSystem.actorOf(MessageActor.props, messageActorName)
 }
