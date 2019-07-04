@@ -17,8 +17,13 @@ private class UserInChat(username: String, router: ActorRef, messenger: ActorRef
       router ! Broadcast(BroadcastMessage(content, username, matrix))
 
     case BroadcastMessage(content, user, senderMatrix) =>
-      if (eligible(senderMatrix)) updateReceivedMessages(user)
-      else stash()
+      if (eligible(senderMatrix)) {
+        updateReceivedMessages(user)
+        messenger ! ShowMessage(content, user)
+        unstashAll()
+      } else {
+        stash()
+      }
       messenger ! ShowMessage(content, user)
 
     case Failure(userInFailure) =>
