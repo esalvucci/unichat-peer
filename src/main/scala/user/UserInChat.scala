@@ -18,7 +18,7 @@ private class UserInChat(username: String, router: ActorRef, messenger: ActorRef
 
     case BroadcastMessage(content, user, senderMatrix) =>
       if (eligible(senderMatrix)) {
-        updateReceivedMessages(user)
+        updateReceivedMessages(user, senderMatrix)
         messenger ! ShowMessage(content, user)
         unstashAll()
       } else {
@@ -35,9 +35,13 @@ private class UserInChat(username: String, router: ActorRef, messenger: ActorRef
       .forall{ case ((u: String, u1: String), n: Int) => n >= senderMatrix.getOrElse((u, u1), 0) }
   }
 
-  private def updateReceivedMessages(user: String): Unit = {
+  private def updateReceivedMessages(user: String, senderMatrix: Map[(String, String), Int]): Unit = {
     val updatedMessages = matrix.getOrElse((user, username), 0) + 1
     matrix = matrix + ((user, username) ->  updatedMessages)
+    matrix.map { case ((u: String, u1: String), n: Int) =>
+      val senderValue = senderMatrix.getOrElse((u, u1), 0)
+      if (senderValue > n) senderValue
+    }
   }
 
   private def updateSentMessages(): Unit = {
