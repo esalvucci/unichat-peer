@@ -1,38 +1,48 @@
 package user
 
 import akka.actor.{Actor, ActorRef, Props, Stash}
-import akka.routing.Broadcast
+import akka.routing.{Broadcast, BroadcastGroup}
 import ui.MessageActor.ShowMessage
-import user.ChatRoom.Failure
 
-private class UserInChat(username: String, router: ActorRef, messenger: ActorRef) extends Actor with Stash {
+private class UserInChat(username: String, paths: Seq[String], messenger: ActorRef) extends Actor with Stash {
   import UserInChat._
 
-  private val users: Seq[String] = Seq.empty
-  private var matrix: Map[(String, String), Int] = Map.empty
+  private var matrix: Map[(String, String), Int] = paths.map(f => (f.substring(f.lastIndexOf("/") + 1), username) -> 0).toMap ++ paths.map(f => (username, f.substring(f.lastIndexOf("/") + 1)) -> 0).toMap
+  private val router = context.actorOf(BroadcastGroup(paths).props(), "router")
 
   override def receive: Receive = {
     case MessageInChat(content) =>
-      updateSentMessages()
       router ! Broadcast(BroadcastMessage(content, username, matrix))
+      updateSentMessages()
 
     case BroadcastMessage(content, user, senderMatrix) =>
-      if (eligible(senderMatrix)) {
+      if (eligible(user, senderMatrix)) {
         updateReceivedMessages(user, senderMatrix)
         messenger ! ShowMessage(content, user)
         unstashAll()
       } else {
         stash()
       }
-      messenger ! ShowMessage(content, user)
 
     case Failure(userInFailure) =>
       matrix = matrix.filterNot(pair => pair._1._1 == userInFailure || pair._1._2 == userInFailure)
+
+/* Uncomment for debug
+    case TestMessage(userAsReceiver, content) =>
+      val optionUser = paths.find(user => user.endsWith(userAsReceiver))
+      if(optionUser.isDefined) {
+        updateSentMessages()
+        context.actorSelection(optionUser.get) ! BroadcastMessage(content, username, matrix)
+      }
+*/
   }
 
-  private def eligible(senderMatrix: Map[(String, String), Int]): Boolean = {
-    matrix.filter(pair => pair._1._2 == username)
-      .forall{ case ((u: String, u1: String), n: Int) => n >= senderMatrix.getOrElse((u, u1), 0) }
+  private def eligible(remote: String, senderMatrix: Map[(String, String), Int]): Boolean = {
+    val receivedMessageInLocal = matrix.filter(pair => pair._1._2 == username && pair._1._1 != remote).map { case ((u: String, _: String), n: Int) => u -> n }
+    val receivedMessageBySender = senderMatrix.filter(pair => pair._1._2 == remote && pair._1._1 != username).map { case ((u: String, _: String), n: Int) => u -> n }
+    val differences = receivedMessageInLocal.toSet.diff(receivedMessageBySender.toSet) ++ receivedMessageBySender.toSet.diff(receivedMessageInLocal.toSet)
+
+    differences.forall{ case (sender: String, _: Int) => matrix.getOrElse((sender, username), 0) >= senderMatrix.getOrElse((sender, remote), 0) }
   }
 
   private def updateReceivedMessages(user: String, senderMatrix: Map[(String, String), Int]): Unit = {
@@ -54,9 +64,10 @@ private class UserInChat(username: String, router: ActorRef, messenger: ActorRef
 }
 
 object UserInChat {
-  def props(username: String, router: ActorRef, messenger: ActorRef): Props =
-    Props(new UserInChat(username, router, messenger))
+  def props(username: String, paths: List[String], messenger: ActorRef): Props =
+    Props(new UserInChat(username, paths, messenger))
 
+  final case class Failure(username: String)
   final case class MessageInChat(content: String)
   final case class BroadcastMessage(content: String, username: String, matrix: Map[(String, String), Int])
 }
