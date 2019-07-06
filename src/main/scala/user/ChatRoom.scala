@@ -1,7 +1,7 @@
 package user
 
-import akka.actor.{Actor, ActorRef, Props, Terminated}
-import akka.routing.{AddRoutee, BroadcastGroup, RemoveRoutee}
+import akka.actor.AbstractActor.Receive
+import akka.actor.{Actor, ActorRef, Props}
 import ui.MessageActor.{ErrorJoin, JoinedInChat}
 import user.ChatRoom.JoinInChatRoom
 import utility.FailureActor
@@ -17,15 +17,19 @@ private class ChatRoom extends Actor {
       //TODO contact the WhitePages
       if (chatRooms.contains(chatRoom)) {
         //TODO start failure detector
-        val paths = List("akka.tcp://unichat-system@127.0.0.2:2552/user/messenger-actor/uni/frank")
-        router = Some(context.actorOf(BroadcastGroup(paths).props(), "router"))
 
-        val userInChatActor = context.actorOf(UserInChat.props(username, router.get), username)
+        val paths = List(
+          "akka.tcp://unichat-system@127.0.0.2:2554/user/messenger-actor/uni/frank",
+          "akka.tcp://unichat-system@127.0.0.2:2553/user/messenger-actor/uni/enry"
+        )
+
+        val userInChatActor = context.actorOf(UserInChat.props(username, paths)(sender), name = username)
         context watch userInChatActor
 
         val failureActor = context.actorOf(FailureActor.props(paths, userInChatActor), failureActorName)
         context watch failureActor
 
+        println(userInChatActor.path.toString)
         sender ! JoinedInChat(username, chatRoom, userInChatActor)
       } else {
         sender ! ErrorJoin("Wrong data!")
@@ -39,5 +43,4 @@ object ChatRoom {
   def props: Props = Props(new ChatRoom)
 
   final case class JoinInChatRoom(username: String, chatRoom: String)
-
 }

@@ -34,7 +34,7 @@ private class MessageActor extends Actor with ActorLogging {
 
     case JoinedInChat(username: String, chatRoom: String, actor: ActorRef) =>
       usersInChat = Some(chatRoom -> actor)
-      println(s"Benvenuto in $chatRoom $username")
+      println(s"Welcome in $chatRoom $username")
       context.become(joined)
 
     case ErrorJoin(errorText) =>
@@ -49,11 +49,20 @@ private class MessageActor extends Actor with ActorLogging {
   private def joined: Receive = {
     case ShowMessage(content, sender) => println(s"$sender: $content")
 
+/* Uncomment only for tester actor for debug
+    case text: String if text.startsWith("test:") =>
+      val username = text.substring(text.indexOf(":") + 1, text.indexOf("@"))
+      val content = text.substring(text.indexOf("@") + 1)
+      println(username)
+      println(content)
+      usersInChat.head._2 ! TestMessage(username, content)
+*/
     case text: String if usersInChat.nonEmpty => usersInChat.head._2 ! MessageInChat(text)
+
   }
 
   private def showJoinMessage(): Unit =
-    println("Enter your username and chatroom name as <username@chatroomname>")
+    println("Enter your username and chat-room name as <username@chatroomname>")
 
   private def showErrorMessage(error: String): Unit = println(s"Error: $error")
 
@@ -67,4 +76,5 @@ object MessageActor {
   final case class JoinedInChat(username: String, chatRoom: String, actor: ActorRef)
   final case class ErrorJoin(errorText: String)
 
+  final case class TestMessage(username: String, content: String)
 }

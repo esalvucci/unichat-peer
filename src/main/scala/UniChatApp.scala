@@ -14,7 +14,7 @@ object UniChatApp extends App {
       .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.port=" + Network.defaultPort))
       .withFallback(ConfigFactory.load())
 
-  val actorSystem = ActorSystem.create(actorSystemName, configurationWithAddressAndPort)
+  // TODO uncomment when resolve error of ip LAN in windows
+  val actorSystem = ActorSystem.create(actorSystemName /*, configurationWithAddressAndPort*/)
   actorSystem.actorOf(MessageActor.props, messageActorName)
-  println(Network.lanAddress)
 }

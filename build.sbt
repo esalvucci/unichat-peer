@@ -10,3 +10,4 @@ libraryDependencies += "com.typesafe.akka" %% "akka-stream" % "2.5.23"
 libraryDependencies += "com.typesafe.akka" %% "akka-remote" % "2.5.23"
 libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % akkaVersion
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % "test"
+libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % "2.5.23"
