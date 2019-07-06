@@ -1,3 +1,5 @@
+import java.net.NetworkInterface
+
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import ui.MessageActor
@@ -14,4 +16,5 @@ object UniChatApp extends App {
 
   val actorSystem = ActorSystem.create(actorSystemName, configurationWithAddressAndPort)
   actorSystem.actorOf(MessageActor.props, messageActorName)
+  println(Network.lanAddress)
 }

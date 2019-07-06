@@ -14,7 +14,7 @@ private class UserInChat(username: String, router: ActorRef, messenger: ActorRef
 }
 
 object UserInChat {
-  def props(username: String, router: ActorRef, messenger: ActorRef): Props =
+  def props(username: String, router: ActorRef)(implicit messenger: ActorRef): Props =
     Props(new UserInChat(username, router, messenger))
 
   final case class MessageInChat(content: String)

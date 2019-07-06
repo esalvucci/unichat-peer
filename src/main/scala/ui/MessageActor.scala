@@ -28,7 +28,9 @@ private class MessageActor extends Actor with ActorLogging {
   private def joining: Receive = {
     case input: String if input.contains("@") =>
       val data = input.trim.split("@")
-      context.actorOf(ChatRoom.props, name = data.tail.head) ! JoinInChatRoom(data.head, data.tail.head)
+      val joiningActor = context.actorOf(ChatRoom.props, name = data.tail.head)
+      joiningActor ! JoinInChatRoom(data.head, data.tail.head)
+      context.watch(joiningActor)
 
     case JoinedInChat(username: String, chatRoom: String, actor: ActorRef) =>
       usersInChat = Some(chatRoom -> actor)
