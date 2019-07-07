@@ -1,10 +1,9 @@
 package user
 
-import akka.actor.Terminated
 import akka.routing.{ActorSelectionRoutee, AddRoutee, BroadcastGroup}
 import ui.MessageActor.ShowWelcomeMessage
 import user.ChatRoom.JoinInChatRoom
-import utility.FailureActor
+import utility.ExtendedRouter
 import akka.actor.{Actor, ActorRef, Props}
 import com.typesafe.config.ConfigFactory
 import server.WhitePages.{JoinedUserMessage, PutUserChatRoom, ReplyUsersInChat, UnJoinedUserMessage}
@@ -12,10 +11,8 @@ import server.WhitePages.{JoinedUserMessage, PutUserChatRoom, ReplyUsersInChat, 
 private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
   private val whitePages = context.actorSelection("akka.tcp://white-pages-system@127.0.0.2:2553/user/white-pages")
 
-  // TODO encapsulate the router in a custom router actor
-  private val router: ActorRef = context.actorOf(BroadcastGroup(Seq()).props, "router")
-
-  private val failureActorName = "failureActor"
+  private val failureActorName = "router-actor"
+  private var failureActorOption: Option[ActorRef] = None
 
   override def receive: Receive = {
     case JoinInChatRoom(chatRoom) =>
@@ -24,14 +21,14 @@ private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
       whitePages ! PutUserChatRoom(localUserAddress, chatRoom)
 
     case ReplyUsersInChat(chatRoomName, userPaths) =>
-      userPaths.foreach(userPath => router ! AddRoutee(ActorSelectionRoutee(context.actorSelection(userPath))))
-      val userInChatActor = context.actorOf(UserInChat.props(username, userPaths.map(extractUsernameFrom), router, messenger), name = username)
-      val failureActor = context.actorOf(FailureActor.props(userPaths, userInChatActor), failureActorName)
+      val userInChatActor = context.actorOf(UserInChat.props(username, userPaths.map(extractUsernameFrom), messenger), name = username)
+      val failureActor = context.actorOf(ExtendedRouter.props(userPaths, userInChatActor), name = failureActorName)
+      failureActorOption = Some(failureActor)
       messenger ! ShowWelcomeMessage(username, chatRoomName, userInChatActor)
 
-    case JoinedUserMessage(userPath) =>  router ! AddRoutee(ActorSelectionRoutee(context.actorSelection(userPath)))
-    case UnJoinedUserMessage(userPath) => // TODO remove user from Router (FailureDetector) and send it to the UserInChat
-
+    case JoinedUserMessage(userPath) => failureActorOption.get ! JoinedUserMessage(userPath)
+    case UnJoinedUserMessage(userPath) => failureActorOption.get ! UnJoinedUserMessage(userPath)
+    // TODO remove user from Router (FailureDetector) and send it to the UserInChat
   }
 
   private def extractUsernameFrom(user: String) = user.substring(user.lastIndexOf("/") + 1)

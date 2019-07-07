@@ -6,16 +6,19 @@ import server.WhitePages.UnJoinedUserMessage
 import ui.MessageActor.{ShowMessage, TestMessage}
 import user.CasualOrdering.Matrix
 
-private class UserInChat(localUsername: String, paths: Seq[String], router: ActorRef, messenger: ActorRef) extends Actor with CausalOrdering with Stash {
+private class UserInChat(localUsername: String, paths: Seq[String], messenger: ActorRef) extends Actor with CausalOrdering with Stash {
   import UserInChat._
 
   override var username: String = localUsername
+  private val routerActorName = "router-actor"
+  private val routerActor = context.actorSelection(context.self.path.parent + "/" + routerActorName)
   populateMap(paths)
 
   override def receive: Receive = {
     case MessageInChat(content) =>
+
       val matrix = sentMessage()
-      router ! Broadcast(BroadcastMessage(content, username, matrix))
+      routerActor ! Broadcast(BroadcastMessage(content, username, matrix))
 
     case BroadcastMessage(content, user, senderMatrix) =>
       receiveMessage(user, senderMatrix, () => messenger ! ShowMessage(content, user))
@@ -41,8 +44,8 @@ private class UserInChat(localUsername: String, paths: Seq[String], router: Acto
 }
 
 object UserInChat {
-  def props(username: String, paths: Seq[String], router: ActorRef, messenger: ActorRef): Props =
-    Props(new UserInChat(username, paths, router, messenger))
+  def props(username: String, paths: Seq[String], messenger: ActorRef): Props =
+    Props(new UserInChat(username, paths, messenger))
 
   final case class Failure(username: String)
   final case class MessageInChat(content: String)

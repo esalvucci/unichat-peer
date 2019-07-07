@@ -20,8 +20,8 @@ object UniChatApp extends App {
   val actorSystem = ActorSystem.create(actorSystemName /*, configurationWithAddressAndPort*/)
   actorSystem.actorOf(MessageActor.props, messageActorName)
 
-/*
   // TODO Uncomment to run server
+/*
   val whitePagesActorSystem = ActorSystem.create(whitePagesActorSystemName /*, configurationWithAddressAndPort*/)
   whitePagesActorSystem.actorOf(WhitePages.props, whitePagesName)
 */
