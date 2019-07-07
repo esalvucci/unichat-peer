@@ -4,11 +4,10 @@ import akka.actor.{Actor, ActorRef, Props, Stash}
 import akka.routing.{Broadcast, BroadcastGroup}
 import ui.MessageActor.ShowMessage
 
-private class UserInChat(username: String, paths: Seq[String], messenger: ActorRef) extends Actor with Stash {
+private class UserInChat(username: String, paths: Seq[String], messenger: ActorRef, router: ActorRef) extends Actor with Stash {
   import UserInChat._
 
   private var matrix: Map[(String, String), Int] = paths.map(f => (f.substring(f.lastIndexOf("/") + 1), username) -> 0).toMap ++ paths.map(f => (username, f.substring(f.lastIndexOf("/") + 1)) -> 0).toMap
-  private val router = context.actorOf(BroadcastGroup(paths).props(), "router")
 
   override def receive: Receive = {
     case MessageInChat(content) =>
@@ -26,7 +25,7 @@ private class UserInChat(username: String, paths: Seq[String], messenger: ActorR
 
     case Failure(userInFailure) =>
       matrix = matrix.filterNot(pair => pair._1._1 == userInFailure || pair._1._2 == userInFailure)
-
+      println("Failure by " + userInFailure)
 /* Uncomment for debug
     case TestMessage(userAsReceiver, content) =>
       val optionUser = paths.find(user => user.endsWith(userAsReceiver))
@@ -64,8 +63,8 @@ private class UserInChat(username: String, paths: Seq[String], messenger: ActorR
 }
 
 object UserInChat {
-  def props(username: String, paths: List[String])(implicit messenger: ActorRef): Props =
-    Props(new UserInChat(username, paths, messenger))
+  def props(username: String, paths: List[String], router: ActorRef)(implicit messenger: ActorRef): Props =
+    Props(new UserInChat(username, paths, messenger, router))
 
   final case class Failure(username: String)
   final case class MessageInChat(content: String)

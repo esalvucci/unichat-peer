@@ -1,40 +1,51 @@
 package utility
 
-import java.util.concurrent.TimeUnit
-
-import akka.actor.{Actor, ActorIdentity, ActorRef, ActorSelection, Identify, Props, Terminated}
-import akka.routing.{ActorRefRoutee, RemoveRoutee, Routees}
-import akka.util.Timeout
+import akka.actor.{Actor, ActorIdentity, ActorRef, ActorSystem, Identify, PoisonPill, Props, Terminated}
+import akka.routing.{ActorSelectionRoutee, BroadcastGroup, RemoveRoutee}
+import ui.MessageActor
+import user.UserInChat
 import utility.FailureActor.Failure
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.FiniteDuration
+class FailureActor(paths: Seq[String], userInChatActor: ActorRef, router: ActorRef) extends Actor {
 
-class FailureActor(usersPaths: Seq[String], userInChatActor: ActorRef) extends Actor {
-  private implicit val timeout: Timeout = Timeout(FiniteDuration(1, TimeUnit.SECONDS))
-  private implicit val executionContext: ExecutionContext = ExecutionContext.global
-  private val pathSeparator = "/"
-
-  private val routerActorName = "router"
-  private var router: Option[ActorRef] = None
-  context.actorSelection("/user/" + routerActorName) ! Identify
+  private val identifyId = 1
+  println(paths)
+  paths.map(a => context.actorSelection(a)).foreach(u => {
+    println(u)
+    u ! Identify(identifyId)
+  })
 
   override def receive: Receive = {
-    case ActorIdentity("identifyId", Some(ref)) =>
-      router = Some(ref)
-      context.watch(router.get)
     case Terminated(actor) =>
       userInChatActor ! Failure(actor.path.name)
-      router.get ! RemoveRoutee(ActorRefRoutee(actor))
+      router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userInChatActor.path)))
+    case ActorIdentity(1, Some(ref)) =>
+      context watch ref
 
   }
-
-  private def getUsernameFrom(path: String) = path.split(pathSeparator).tail
 }
 
 object FailureActor {
-  def props(usersPaths: Seq[String], sender: ActorRef): Props =
-    Props(new FailureActor(usersPaths, sender))
+  def props(paths: Seq[String], sender: ActorRef, router: ActorRef): Props =
+    Props(new FailureActor(paths, sender, router))
 
   final case class Failure(username: String)
+}
+
+object FailureTest extends App {
+
+  // create the ActorSystem instance
+  val system = ActorSystem("FailureActorTest")
+
+  // create the Parent that will create Kenny
+  val paths = List(
+    "akka.tcp://FailureActorTest@127.0.0.2:2554/user/frank")
+  val router = system.actorOf(BroadcastGroup(paths).props, "router")
+  val messanger = system.actorOf(MessageActor.props, "message-actor")
+  val actorInChat = system.actorOf(UserInChat.props("enry", List.empty, router )(messanger), name = "enry")
+  val frankSelection =  system.actorSelection("akka.tcp://FailureActorTest@127.0.0.2:2554/user/frank")
+
+  // lookup kenny, then kill it
+  val failureActor = system.actorOf(FailureActor.props(paths, actorInChat, router), name = "failure-actor")
+  frankSelection !(PoisonPill, ActorRef.noSender)
 }

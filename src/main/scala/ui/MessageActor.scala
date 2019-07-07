@@ -30,12 +30,11 @@ private class MessageActor extends Actor with ActorLogging {
       val data = input.trim.split("@")
       val joiningActor = context.actorOf(ChatRoom.props, name = data.tail.head)
       joiningActor ! JoinInChatRoom(data.head, data.tail.head)
-      context.watch(joiningActor)
 
     case JoinedInChat(username: String, chatRoom: String, actor: ActorRef) =>
       usersInChat = Some(chatRoom -> actor)
       println(s"Welcome in $chatRoom $username")
-      context.become(joined)
+      context become joined
 
     case ErrorJoin(errorText) =>
       showErrorMessage(errorText)
