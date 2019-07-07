@@ -31,7 +31,7 @@ trait CausalOrdering extends Stash {
     }
   }
 
-  def removeReferenceTo(user: String): Unit =
+  def removeReferenceOf(user: String): Unit =
     matrix = matrix.filterNot(pair => pair._1._1 == user || pair._1._2 == user)
 
 

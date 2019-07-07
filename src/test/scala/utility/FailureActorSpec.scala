@@ -25,7 +25,7 @@ class FailureActorSpec extends TestKit(ActorSystem(
 
   private val paths = List("akka.tcp://unichat-system@127.0.0.2:2552/user/messenger-actor/uni/francesco")
   private val username = "francesco"
-  private val chatRoomActor = system.actorOf(ChatRoom.props)
+//  private val chatRoomActor = system.actorOf(ChatRoom.props)
 
   override def afterAll {
     shutdown()

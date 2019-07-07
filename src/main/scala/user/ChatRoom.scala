@@ -1,50 +1,50 @@
 package user
 
 import akka.actor.Terminated
-import akka.routing.BroadcastGroup
-import ui.MessageActor.{ErrorJoin, JoinedInChat}
+import akka.routing.{ActorSelectionRoutee, AddRoutee, BroadcastGroup}
+import ui.MessageActor.ShowWelcomeMessage
 import user.ChatRoom.JoinInChatRoom
 import utility.FailureActor
 import akka.actor.{Actor, ActorRef, Props}
+import com.typesafe.config.ConfigFactory
+import server.WhitePages.{JoinedUserMessage, PutUserChatRoom, ReplyUsersInChat, UnJoinedUserMessage}
 
-private class ChatRoom extends Actor {
-  private val chatRooms: List[String] = List("uni", "family", "friends")
+private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
+  private val whitePages = context.actorSelection("akka.tcp://white-pages-system@127.0.0.2:2553/user/white-pages")
+
+  // TODO encapsulate the router in a custom router actor
+  private val router: ActorRef = context.actorOf(BroadcastGroup(Seq()).props, "router")
+
   private val failureActorName = "failureActor"
-  private implicit val senderActor: ActorRef = sender
 
   override def receive: Receive = {
-    case JoinInChatRoom(username, chatRoom) =>
-      //TODO contact the WhitePages
-      if (chatRooms.contains(chatRoom)) {
-        //TODO start failure detector
+    case JoinInChatRoom(chatRoom) =>
+      //TODO find LAN address of local user
+      val localUserAddress = userAddress(chatRoom)
+      whitePages ! PutUserChatRoom(localUserAddress, chatRoom)
 
-        val paths = List(
-          "akka.tcp://unichat-system@127.0.0.2:2554/user/messenger-actor/uni/frank",
-          "akka.tcp://unichat-system@127.0.0.2:2553/user/messenger-actor/uni/azzu"
-        )
+    case ReplyUsersInChat(chatRoomName, userPaths) =>
+      userPaths.foreach(userPath => router ! AddRoutee(ActorSelectionRoutee(context.actorSelection(userPath))))
+      val userInChatActor = context.actorOf(UserInChat.props(username, userPaths.map(extractUsernameFrom), router, messenger), name = username)
+      val failureActor = context.actorOf(FailureActor.props(userPaths, userInChatActor), failureActorName)
+      messenger ! ShowWelcomeMessage(username, chatRoomName, userInChatActor)
 
-        val router = context.actorOf(BroadcastGroup(paths).props, "router")
-        val userInChatActor = context.actorOf(UserInChat.props(username, paths.map(extractUsernameFrom), router)(sender), name = username)
-        context watch userInChatActor
+    case JoinedUserMessage(userPath) =>  router ! AddRoutee(ActorSelectionRoutee(context.actorSelection(userPath)))
+    case UnJoinedUserMessage(userPath) => // TODO remove user from Router (FailureDetector) and send it to the UserInChat
 
-        val failureActor = context.actorOf(FailureActor.props(paths, userInChatActor), failureActorName)
-        context watch failureActor
-
-        println(userInChatActor.path.toString)
-        sender ! JoinedInChat(username, chatRoom, userInChatActor)
-      } else {
-        sender ! ErrorJoin("Wrong data!")
-      }
-    case Terminated =>
-    //TODO remove actor form matrix
   }
 
   private def extractUsernameFrom(user: String) = user.substring(user.lastIndexOf("/") + 1)
 
+  private def userAddress(chatRoom: String): String = {
+    val localHostname = ConfigFactory.defaultApplication().getString("akka.remote.netty.tcp.hostname")
+    val localPort = ConfigFactory.defaultApplication().getString("akka.remote.netty.tcp.port")
+    s"akka.tcp://unichat-system@$localHostname:$localPort/user/messenger-actor/$chatRoom/$username"
+  }
 }
 
 object ChatRoom {
-  def props: Props = Props(new ChatRoom)
+  def props(username: String, messenger: ActorRef): Props = Props(new ChatRoom(username, messenger))
 
-  final case class JoinInChatRoom(username: String, chatRoom: String)
+  final case class JoinInChatRoom(chatRoom: String)
 }
