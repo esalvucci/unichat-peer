@@ -1,16 +1,14 @@
 package user
 
-import akka.actor.AbstractActor.Receive
-import akka.actor.{Actor, ActorRef, Props, Terminated}
+import akka.actor.Terminated
 import akka.routing.BroadcastGroup
 import ui.MessageActor.{ErrorJoin, JoinedInChat}
 import user.ChatRoom.JoinInChatRoom
-import user.UserInChat.Failure
 import utility.FailureActor
+import akka.actor.{Actor, ActorRef, Props}
 
 private class ChatRoom extends Actor {
   private val chatRooms: List[String] = List("uni", "family", "friends")
-  private var router: Option[ActorRef] = None
   private val failureActorName = "failure-actor"
   private implicit val senderActor: ActorRef = sender
 
@@ -22,9 +20,10 @@ private class ChatRoom extends Actor {
           "akka.tcp://unichat-system@127.0.0.2:2554/user/messenger-actor/uni/frank",
           "akka.tcp://unichat-system@127.0.0.2:2553/user/messenger-actor/uni/enry"
         )
-        val router = context.actorOf(BroadcastGroup(paths).props(), "router")
 
-        val userInChatActor = context.actorOf(UserInChat.props(username, paths, router)(sender), name = username)
+        val router = context.actorOf(BroadcastGroup(paths).props, "router")
+        val userInChatActor =
+          context.actorOf(UserInChat.props(username, paths.map(extractUsernameFrom), router)(sender), username)
 
         val failureActor = context.actorOf(FailureActor.props(paths, userInChatActor, router), failureActorName)
         failureActor ! Terminated
@@ -33,8 +32,11 @@ private class ChatRoom extends Actor {
       } else {
         sender ! ErrorJoin("Wrong data!")
       }
+    case Terminated =>
     //TODO remove actor form matrix
   }
+
+  private def extractUsernameFrom(user: String) = user.substring(user.lastIndexOf("/") + 1)
 
 }
 
