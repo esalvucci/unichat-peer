@@ -16,6 +16,7 @@ import org.joda.time.DateTime
 import java.util.UUID
 
 case class ListOfUsers (
+  usernames: Option[Seq[User]] = None
 ) extends ApiModel
 
 

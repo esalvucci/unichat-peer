@@ -25,16 +25,12 @@ object UsernameApi {
    * Expected answers:
    *   code 204 : ListOfUsers (Success. The user was successfully added to the chat room. )
    *   code 409 :  (Conflict. The user is already a member of the chat room. )
-   * libraryDependencies += libraryDependencies +=
-   * Available security schemes:
-   *   credentials (apiKey)
    * 
    * @param chatRoomName The chat room name
    * @param username The username to be added. 
    */
-  def addUserInChatRoom(chatRoomName: String, username: Option[User] = None)(implicit apiKey: ApiKeyValue): ApiRequest[ListOfUsers] =
+  def addUserInChatRoom(chatRoomName: String, username: Option[User] = None): ApiRequest[ListOfUsers] =
     ApiRequest[ListOfUsers](ApiMethods.POST, "https://localhost:8080/web-chat/v1", "/rooms/{chatRoomName}/username", "application/json")
-      .withApiKey(apiKey, "Authorization", HEADER)
       .withBody(username)
       .withPathParam("chatRoomName", chatRoomName)
       .withSuccessResponse[ListOfUsers](204)
@@ -45,15 +41,11 @@ object UsernameApi {
    * Expected answers:
    *   code 204 :  (The user was successfully deleted from the chat room)
    * 
-   * Available security schemes:
-   *   credentials (apiKey)
-   * 
    * @param chatRoomName The chat room name
    * @param username The chat room user&#39;s identifier (i.e. the identifier of the corresponding user)
    */
-  def removeUserFromChatRoom(chatRoomName: String, username: String)(implicit apiKey: ApiKeyValue): ApiRequest[Unit] =
+  def removeUserFromChatRoom(chatRoomName: String, username: String): ApiRequest[Unit] =
     ApiRequest[Unit](ApiMethods.DELETE, "https://localhost:8080/web-chat/v1", "/rooms/{chatRoomName}/{username}", "application/json")
-      .withApiKey(apiKey, "Authorization", HEADER)
       .withPathParam("chatRoomName", chatRoomName)
       .withPathParam("username", username)
       .withSuccessResponse[Unit](204)

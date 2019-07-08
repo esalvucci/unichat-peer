@@ -16,6 +16,7 @@ import org.joda.time.DateTime
 import java.util.UUID
 
 case class Link (
+  link: Option[String] = None
 ) extends ApiModel
 
 
