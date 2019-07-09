@@ -48,7 +48,6 @@ private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
 
     case JoinedUserMessage(userPath) => failureActorOption.get ! JoinedUserMessage(userPath)
     case UnJoinedUserMessage(userPath) => failureActorOption.get ! UnJoinedUserMessage(userPath)
-    // TODO remove user from Router (FailureDetector) and send it to the UserInChat
   }
 
   private def getChatFrom(users: Option[Seq[User]]): String = {

@@ -43,45 +43,38 @@ info:
         * when performing an HTTP request, clients are considered __authorized__ if they are authenticated _and_ they their role is enabled to perform the requested operation
 host: localhost:8080
 basePath: /web-chat/v1
-securityDefinitions:
-  credentials:
-    type: apiKey
-    in: header
-    name: Authorization
 paths:
   /rooms/{chatRoomName}/username:
     parameters: &RoomsParams
-    - &RoomsNameParams
-      in: path
-      name: chatRoomName
-      type: string
-      required: true
-      description: The chat room name
+      - &RoomsNameParams
+        in: path
+        name: chatRoomName
+        type: string
+        required: true
+        description: The chat room name
 
     post:
       parameters:
-      - in: body
-        name: username
-        description: >
-          The username to be added.
+        - in: body
+          name: username
+          description: >
+            The username to be added.
 
-        schema:
-          $ref: '#/definitions/User'
+          schema:
+            $ref: '#/definitions/User'
       tags:
-      - username
+        - username
       summary: Add a user to a particular chat room
       description: >
         Add a user to a particular chat room.
-        
+
       operationId: addUserInChatRoom
       consumes:
-      - application/json
-      - application/xml
-      - application/yaml
-      security:
-      - credentials: []
+        - application/json
+        - application/xml
+        - application/yaml
       schemes:
-      - http
+        - http
       responses:
         204:
           description: >
@@ -96,25 +89,23 @@ paths:
 
   /rooms/{chatRoomName}/{username}:
     parameters:
-    - *RoomsNameParams
-    - in: path
-      name: username
-      type: string
-      required: true
-      description: The chat room user's identifier (i.e. the identifier of the corresponding user)
+      - *RoomsNameParams
+      - in: path
+        name: username
+        type: string
+        required: true
+        description: The chat room user's identifier (i.e. the identifier of the corresponding user)
 
     delete:
       tags:
-      - username
+        - username
       summary: Delete a particular user of a particular chat room
       description: >
         Delete a particular member of a particular chat room.
-      
+
       operationId: removeUserFromChatRoom
-      security:
-      - credentials: []
       schemes:
-      - http
+        - http
       responses:
         204:
           description: The user was successfully deleted from the chat room
@@ -122,10 +113,15 @@ paths:
 
 definitions:
   Link:
-    type: string
-    format: url
-    example: www.example.com/web-chat/v1/resourceSet/resourceName
+    type: object
+    description: ""
+    properties:
+      link:
+        type: string
+        format: url
+        example: www.example.com/web-chat/v1/resourceSet/resourceName
   User:
+    description: ""
     type: object
     properties:
       username:
@@ -134,6 +130,9 @@ definitions:
       link:
         $ref: '#/definitions/Link'
   ListOfUsers:
-    type: array
-    items:
-      $ref: '#/definitions/User'
+    type: object
+    properties:
+      usernames:
+        type: array
+        items:
+          $ref: '#/definitions/User'
