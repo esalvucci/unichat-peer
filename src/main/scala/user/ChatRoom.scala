@@ -1,27 +1,24 @@
 package user
 
-import akka.actor.Status.Failure
+import akka.actor.Status.{Failure, Success}
 import ui.MessageActor.ShowWelcomeMessage
 import user.ChatRoom.{Exit, JoinInChatRoom}
 import utility.ExtendedRouter
 import akka.actor.{Actor, ActorRef, Props}
 import com.typesafe.config.ConfigFactory
-import io.swagger.client.core.ApiInvoker
+import io.swagger.client.ApiInvoker
 import server.WhitePages.{JoinMe, JoinedUserMessage, PutUserChatRoom, ReplyUsersInChat, UnJoinedUserMessage}
-import akka.pattern.{ask, pipe}
-import akka.routing.Broadcast
-import io.swagger.client.api.MemberInChatRoomApi
 import io.swagger.client.model.{ListOfMemberInChatRoom, MemberInChatRoom}
-import scala.collection.immutable.Seq
+import io.swagger.client.api.MemberInChatRoomApi
 
+import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext
 
 private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
   private implicit val executionContext: ExecutionContext = context.dispatcher
   private val failureActorName = "router-actor"
   private var failureActorOption: Option[ActorRef] = None
-  private val userApi = MemberInChatRoomApi
-  private val apiInvoker = ApiInvoker()(context.system)
+  private val userApi = new MemberInChatRoomApi()
   private var chatroomName: Option[String] = None
 
   override def receive: Receive = {
@@ -30,8 +27,8 @@ private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
       chatroomName = Some(chatRoom)
       val localUserAddress = userAddress(chatRoom)
 /*      whitePages ! PutUserChatRoom(localUserAddress, chatRoom)*/
-      val requestResult = userApi.addUserInChatRoom(chatRoom)
-      apiInvoker.execute(requestResult).pipeTo(self)
+      val requestResult = userApi.addUserInChatRoomAsync(chatRoom)
+      requestResult.map(list => self ! list)
 
     case ListOfMemberInChatRoom(listOfUsers: Option[Seq[MemberInChatRoom]]) =>
       println(listOfUsers)
@@ -42,8 +39,7 @@ private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
       extendedRouterActor ! JoinMe
 
     case Exit(chatRoom: String) =>
-      val requestResult = userApi.removeUserFromChatRoom(chatRoom, username)
-      apiInvoker.execute(requestResult)
+      userApi.removeUserFromChatRoomAsync(chatRoom, username)
 
     case Failure(status) => // ToDo send message to MessageActor
 

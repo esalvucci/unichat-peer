@@ -9,14 +9,11 @@
  * https://github.com/swagger-api/swagger-codegen.git
  * Do not edit the class manually.
  */
+
 package io.swagger.client.model
 
-import io.swagger.client.core.ApiModel
-import org.joda.time.DateTime
-import java.util.UUID
 
 case class ListOfMemberInChatRoom (
-  usernames: Option[Seq[MemberInChatRoom]] = None
-) extends ApiModel
-
+  usernames: Option[List[MemberInChatRoom]] = None
+)
 

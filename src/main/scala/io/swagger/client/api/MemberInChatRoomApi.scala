@@ -9,49 +9,178 @@
  * https://github.com/swagger-api/swagger-codegen.git
  * Do not edit the class manually.
  */
+
 package io.swagger.client.api
+
+import java.text.SimpleDateFormat
 
 import io.swagger.client.model.ListOfMemberInChatRoom
 import io.swagger.client.model.MemberInChatRoom
-import io.swagger.client.core._
-import io.swagger.client.core.CollectionFormats._
-import io.swagger.client.core.ApiKeyLocations._
+import io.swagger.client.{ApiInvoker, ApiException}
 
-object MemberInChatRoomApi {
+import com.sun.jersey.multipart.FormDataMultiPart
+import com.sun.jersey.multipart.file.FileDataBodyPart
+
+import javax.ws.rs.core.MediaType
+
+import java.io.File
+import java.util.Date
+import java.util.TimeZone
+
+import scala.collection.mutable.HashMap
+
+import com.wordnik.swagger.client._
+import scala.concurrent.Future
+import collection.mutable
+
+import java.net.URI
+
+import com.wordnik.swagger.client.ClientResponseReaders.Json4sFormatsReader._
+import com.wordnik.swagger.client.RequestWriters.Json4sFormatsWriter._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent._
+import scala.concurrent.duration._
+import scala.util.{Failure, Success, Try}
+
+import org.json4s._
+
+class MemberInChatRoomApi(
+  val defBasePath: String = "https://localhost:9000",
+  defApiInvoker: ApiInvoker = ApiInvoker
+) {
+  private lazy val dateTimeFormatter = {
+    val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+    formatter.setTimeZone(TimeZone.getTimeZone("UTC"))
+    formatter
+  }
+  private val dateFormatter = {
+    val formatter = new SimpleDateFormat("yyyy-MM-dd")
+    formatter.setTimeZone(TimeZone.getTimeZone("UTC"))
+    formatter
+  }
+  implicit val formats = new org.json4s.DefaultFormats {
+    override def dateFormatter = dateTimeFormatter
+  }
+  implicit val stringReader: ClientResponseReader[String] = ClientResponseReaders.StringReader
+  implicit val unitReader: ClientResponseReader[Unit] = ClientResponseReaders.UnitReader
+  implicit val jvalueReader: ClientResponseReader[JValue] = ClientResponseReaders.JValueReader
+  implicit val jsonReader: ClientResponseReader[Nothing] = JsonFormatsReader
+  implicit val stringWriter: RequestWriter[String] = RequestWriters.StringWriter
+  implicit val jsonWriter: RequestWriter[Nothing] = JsonFormatsWriter
+
+  var basePath: String = defBasePath
+  var apiInvoker: ApiInvoker = defApiInvoker
+
+  def addHeader(key: String, value: String): mutable.HashMap[String, String] = {
+    apiInvoker.defaultHeaders += key -> value
+  }
+
+  val config: SwaggerConfig = SwaggerConfig.forUrl(new URI(defBasePath))
+  val client = new RestClient(config)
+  val helper = new MemberInChatRoomApiAsyncHelper(client, config)
 
   /**
+   * Add a user to a particular chat room
    * Add a user to a particular chat room. 
-   * 
-   * Expected answers:
-   *   code 200 : ListOfMemberInChatRoom (Success. The user was successfully added to the chat room. )
-   *   code 409 :  (Conflict. The user is already a member of the chat room. )
-   * 
-   * @param chatRoomName The chat room name
-   * @param username The username to be added. 
+   *
+   * @param chatRoomName The chat room name 
+   * @param username The username to be added.  (optional)
+   * @return ListOfMemberInChatRoom
    */
-  def addUserInChatRoom(chatRoomName: String, username: Option[MemberInChatRoom] = None): ApiRequest[ListOfMemberInChatRoom] =
-    ApiRequest[ListOfMemberInChatRoom](ApiMethods.PUT, "https://localhost:8080/web-chat", "/rooms/{chatRoomName}/user", "application/json")
-      .withBody(username)
-      .withPathParam("chatRoomName", chatRoomName)
-      .withSuccessResponse[ListOfMemberInChatRoom](200)
-      .withErrorResponse[Unit](409)
-        /**
+  def addUserInChatRoom(chatRoomName: String, username: Option[MemberInChatRoom] = None): Option[ListOfMemberInChatRoom] = {
+    val await = Try(Await.result(addUserInChatRoomAsync(chatRoomName, username), Duration.Inf))
+    await match {
+      case Success(i) => Some(await.get)
+      case Failure(t) => None
+    }
+  }
+
+  /**
+   * Add a user to a particular chat room asynchronously
+   * Add a user to a particular chat room. 
+   *
+   * @param chatRoomName The chat room name 
+   * @param username The username to be added.  (optional)
+   * @return Future(ListOfMemberInChatRoom)
+   */
+  def addUserInChatRoomAsync(chatRoomName: String, username: Option[MemberInChatRoom] = None): Future[ListOfMemberInChatRoom] = {
+      helper.addUserInChatRoom(chatRoomName, username)
+  }
+
+  /**
+   * Delete a particular user of a particular chat room
    * Delete a particular member of a particular chat room. 
-   * 
-   * Expected answers:
-   *   code 204 :  (The user was successfully deleted from the chat room)
-   *   code 404 :  (User not found)
-   * 
-   * @param chatRoomName The chat room name
-   * @param username The chat room user&#39;s identifier (i.e. the identifier of the corresponding user)
+   *
+   * @param chatRoomName The chat room name 
+   * @param username The chat room user&#39;s identifier (i.e. the identifier of the corresponding user) 
+   * @return void
    */
-  def removeUserFromChatRoom(chatRoomName: String, username: String): ApiRequest[Unit] =
-    ApiRequest[Unit](ApiMethods.DELETE, "https://localhost:8080/web-chat", "/rooms/{chatRoomName}/{username}", "application/json")
-      .withPathParam("chatRoomName", chatRoomName)
-      .withPathParam("username", username)
-      .withSuccessResponse[Unit](204)
-      .withErrorResponse[Unit](404)
-      
+  def removeUserFromChatRoom(chatRoomName: String, username: String) = {
+    val await = Try(Await.result(removeUserFromChatRoomAsync(chatRoomName, username), Duration.Inf))
+    await match {
+      case Success(i) => Some(await.get)
+      case Failure(t) => None
+    }
+  }
+
+  /**
+   * Delete a particular user of a particular chat room asynchronously
+   * Delete a particular member of a particular chat room. 
+   *
+   * @param chatRoomName The chat room name 
+   * @param username The chat room user&#39;s identifier (i.e. the identifier of the corresponding user) 
+   * @return Future(void)
+   */
+  def removeUserFromChatRoomAsync(chatRoomName: String, username: String) = {
+      helper.removeUserFromChatRoom(chatRoomName, username)
+  }
 
 }
 
+class MemberInChatRoomApiAsyncHelper(client: TransportClient, config: SwaggerConfig) extends ApiClient(client, config) {
+
+  def addUserInChatRoom(chatRoomName: String,
+    username: Option[MemberInChatRoom] = None
+    )(implicit reader: ClientResponseReader[ListOfMemberInChatRoom], writer: RequestWriter[Option[MemberInChatRoom]]): Future[ListOfMemberInChatRoom] = {
+    // create path and map variables
+    val path = (addFmt("/rooms/{chatRoomName}/user")
+      replaceAll("\\{" + "chatRoomName" + "\\}", chatRoomName.toString))
+
+    // query params
+    val queryParams = new mutable.HashMap[String, String]
+    val headerParams = new mutable.HashMap[String, String]
+
+    if (chatRoomName == null) throw new Exception("Missing required parameter 'chatRoomName' when calling MemberInChatRoomApi->addUserInChatRoom")
+
+
+    val resFuture = client.submit("PUT", path, queryParams.toMap, headerParams.toMap, writer.write(username))
+    resFuture flatMap { resp =>
+      process(reader.read(resp))
+    }
+  }
+
+  def removeUserFromChatRoom(chatRoomName: String,
+    username: String)(implicit reader: ClientResponseReader[Unit]): Future[Unit] = {
+    // create path and map variables
+    val path = (addFmt("/rooms/{chatRoomName}/{username}")
+      replaceAll("\\{" + "chatRoomName" + "\\}", chatRoomName.toString)
+      replaceAll("\\{" + "username" + "\\}", username.toString))
+
+    // query params
+    val queryParams = new mutable.HashMap[String, String]
+    val headerParams = new mutable.HashMap[String, String]
+
+    if (chatRoomName == null) throw new Exception("Missing required parameter 'chatRoomName' when calling MemberInChatRoomApi->removeUserFromChatRoom")
+
+    if (username == null) throw new Exception("Missing required parameter 'username' when calling MemberInChatRoomApi->removeUserFromChatRoom")
+
+
+    val resFuture = client.submit("DELETE", path, queryParams.toMap, headerParams.toMap, "")
+    resFuture flatMap { resp =>
+      process(reader.read(resp))
+    }
+  }
+
+
+}
