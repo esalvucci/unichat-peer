@@ -1,8 +1,8 @@
 package user
 
 import akka.actor.{Actor, ActorRef, Props, Stash}
-import akka.routing.{ActorSelectionRoutee, AddRoutee, Broadcast, RemoveRoutee}
-import server.WhitePages.UnJoinedUserMessage
+import akka.routing.{ActorRefRoutee, ActorSelectionRoutee, AddRoutee, Broadcast, RemoveRoutee}
+import server.WhitePages.{JoinMe, JoinedUserMessage, UnJoinedUserMessage}
 import ui.MessageActor.{ShowMessage, TestMessage}
 import user.CasualOrdering.Matrix
 
@@ -23,6 +23,7 @@ private class UserInChat(localUsername: String, paths: Seq[String], messenger: A
     case BroadcastMessage(content, user, senderMatrix) =>
       receiveMessage(user, senderMatrix, () => messenger ! ShowMessage(content, user))
 
+    case JoinMe(sender) => routerActor ! AddRoutee(ActorRefRoutee(sender))
     case UnJoinedUserMessage(user) => removeReferenceOf(user)
     case Failure(userInFailure) => removeReferenceOf(userInFailure)
 /*

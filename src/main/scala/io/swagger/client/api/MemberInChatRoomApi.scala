@@ -11,44 +11,46 @@
  */
 package io.swagger.client.api
 
-import io.swagger.client.model.ListOfUsers
-import io.swagger.client.model.User
+import io.swagger.client.model.ListOfMemberInChatRoom
+import io.swagger.client.model.MemberInChatRoom
 import io.swagger.client.core._
 import io.swagger.client.core.CollectionFormats._
 import io.swagger.client.core.ApiKeyLocations._
 
-object UsernameApi {
+object MemberInChatRoomApi {
 
   /**
    * Add a user to a particular chat room. 
    * 
    * Expected answers:
-   *   code 204 : ListOfUsers (Success. The user was successfully added to the chat room. )
+   *   code 200 : ListOfMemberInChatRoom (Success. The user was successfully added to the chat room. )
    *   code 409 :  (Conflict. The user is already a member of the chat room. )
    * 
    * @param chatRoomName The chat room name
    * @param username The username to be added. 
    */
-  def addUserInChatRoom(chatRoomName: String, username: Option[User] = None): ApiRequest[ListOfUsers] =
-    ApiRequest[ListOfUsers](ApiMethods.POST, "https://localhost:8080/web-chat/v1", "/rooms/{chatRoomName}/username", "application/json")
+  def addUserInChatRoom(chatRoomName: String, username: Option[MemberInChatRoom] = None): ApiRequest[ListOfMemberInChatRoom] =
+    ApiRequest[ListOfMemberInChatRoom](ApiMethods.PUT, "https://localhost:8080/web-chat", "/rooms/{chatRoomName}/user", "application/json")
       .withBody(username)
       .withPathParam("chatRoomName", chatRoomName)
-      .withSuccessResponse[ListOfUsers](204)
+      .withSuccessResponse[ListOfMemberInChatRoom](200)
       .withErrorResponse[Unit](409)
         /**
    * Delete a particular member of a particular chat room. 
    * 
    * Expected answers:
    *   code 204 :  (The user was successfully deleted from the chat room)
+   *   code 404 :  (User not found)
    * 
    * @param chatRoomName The chat room name
    * @param username The chat room user&#39;s identifier (i.e. the identifier of the corresponding user)
    */
   def removeUserFromChatRoom(chatRoomName: String, username: String): ApiRequest[Unit] =
-    ApiRequest[Unit](ApiMethods.DELETE, "https://localhost:8080/web-chat/v1", "/rooms/{chatRoomName}/{username}", "application/json")
+    ApiRequest[Unit](ApiMethods.DELETE, "https://localhost:8080/web-chat", "/rooms/{chatRoomName}/{username}", "application/json")
       .withPathParam("chatRoomName", chatRoomName)
       .withPathParam("username", username)
       .withSuccessResponse[Unit](204)
+      .withErrorResponse[Unit](404)
       
 
 }

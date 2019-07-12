@@ -2,6 +2,7 @@ package user
 
 import akka.actor.Stash
 import user.CasualOrdering.Matrix
+import scala.collection.immutable.Map
 
 trait CausalOrdering extends Stash {
 
@@ -15,7 +16,7 @@ trait CausalOrdering extends Stash {
 
 
   def sentMessage(): Matrix = {
-    val currentMatrix = Map.from(matrix)
+    val currentMatrix: Matrix = Map.canBuildFrom(matrix).result()
     updateSentMessages()
     currentMatrix
   }

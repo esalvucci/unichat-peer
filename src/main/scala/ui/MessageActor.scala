@@ -7,7 +7,7 @@ import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.stream.{ActorMaterializer, IOResult, Materializer}
 import akka.util.ByteString
 import user.ChatRoom
-import user.ChatRoom.JoinInChatRoom
+import user.ChatRoom.{Exit, JoinInChatRoom}
 import user.UserInChat.MessageInChat
 
 import scala.concurrent.Future
@@ -19,7 +19,7 @@ private class MessageActor extends Actor with ActorLogging {
 
   implicit val materializer: Materializer = ActorMaterializer()
 
-  private var usersInChat: Map[String, ActorRef] = Map.empty
+  private var userInChatrooms: Map[String, ActorRef] = Map.empty
 
   private val stdinSource: Source[ByteString, Future[IOResult]] = StreamConverters.fromInputStream(() => System.in)
   stdinSource.map(text => text.utf8String).runForeach(sendTypedText)
@@ -27,17 +27,20 @@ private class MessageActor extends Actor with ActorLogging {
   override def receive: Receive = {
     case text: String if text.contains("@") && text.contains(":") =>
       val colonIndex = text.indexOf(":")
-      val receiver = usersInChat.get(text.substring(1, colonIndex))
+      val receiver = userInChatrooms.get(text.substring(1, colonIndex))
       if (receiver.isDefined) receiver.get ! MessageInChat(text.substring(colonIndex + 1))
       else showErrorMessage("Insert the correct chat room name")
 
+    case text: String if text.contains("@exit") =>
+      userInChatrooms = userInChatrooms.filterNot(user => user._1 == text.split("@").head)
+      userInChatrooms.filter(user => user._1 == text.split("@").head).head._2 ! Exit(text.split("@").head)
     case usernameAndChatRoomName: String if usernameAndChatRoomName.contains("@") =>
       val usernameAndChatroomNameSplit = usernameAndChatRoomName.trim.split("@")
       val chatroom = context.actorOf(ChatRoom.props(usernameAndChatroomNameSplit.head, self), name = usernameAndChatroomNameSplit.tail.head)
       chatroom ! JoinInChatRoom(usernameAndChatroomNameSplit.tail.head)
 
     case ShowWelcomeMessage(username: String, chatRoom: String, actor: ActorRef) =>
-      usersInChat = usersInChat + (chatRoom -> actor)
+      userInChatrooms = userInChatrooms + (chatRoom -> actor)
       println(s"Welcome in $chatRoom $username")
 
     case ShowMessage(content, sender) => println(s"$sender: $content")
@@ -45,17 +48,7 @@ private class MessageActor extends Actor with ActorLogging {
     case ErrorJoin(errorText) =>
       showErrorMessage(errorText)
       showJoinMessage()
-/*
-    // TODO Uncomment only for tester actor for debug
-    case text: String if text.startsWith("test:") =>
-      val atIndex = text.indexOf("@")
-      val colonIndex = text.indexOf(":")
-      val username = text.substring(colonIndex + 1, atIndex)
-      val content = text.substring(atIndex + 1)
-      usersInChat.head._2 ! TestMessage(username, content)
-*/
     case t: String =>
-      println(new Regex("^[a-zA-Z0-9]+@[a-zA-Z0-9]+$").matches(t))
       showErrorMessage("enter correct data!")
       showJoinMessage()
   }

@@ -42,7 +42,7 @@ info:
 
         * when performing an HTTP request, clients are considered __authorized__ if they are authenticated _and_ they their role is enabled to perform the requested operation
 host: localhost:8080
-basePath: /web-chat/v1
+basePath: /web-chat
 paths:
   /rooms/{chatRoomName}/username:
     parameters: &RoomsParams
@@ -53,7 +53,7 @@ paths:
         required: true
         description: The chat room name
 
-    post:
+    put:
       parameters:
         - in: body
           name: username
@@ -61,9 +61,9 @@ paths:
             The username to be added.
 
           schema:
-            $ref: '#/definitions/User'
+            $ref: '#/definitions/MemberInChatRoom'
       tags:
-        - username
+        - memberInChatRoom
       summary: Add a user to a particular chat room
       description: >
         Add a user to a particular chat room.
@@ -76,12 +76,12 @@ paths:
       schemes:
         - http
       responses:
-        204:
+        200:
           description: >
             Success.
             The user was successfully added to the chat room.
           schema:
-            $ref: "#/definitions/ListOfUsers"
+            $ref: "#/definitions/ListOfMemberInChatRoom"
         409:
           description: >
             Conflict.
@@ -98,7 +98,7 @@ paths:
 
     delete:
       tags:
-        - username
+        - memberInChatRoom
       summary: Delete a particular user of a particular chat room
       description: >
         Delete a particular member of a particular chat room.
@@ -109,7 +109,8 @@ paths:
       responses:
         204:
           description: The user was successfully deleted from the chat room
-
+        404:
+          description: User not found
 
 definitions:
   Link:
@@ -119,8 +120,8 @@ definitions:
       link:
         type: string
         format: url
-        example: www.example.com/web-chat/v1/resourceSet/resourceName
-  User:
+        example: www.example.com/web-chat/resourceSet/resourceName
+  MemberInChatRoom:
     description: ""
     type: object
     properties:
@@ -129,10 +130,10 @@ definitions:
         example: name.surnameN
       link:
         $ref: '#/definitions/Link'
-  ListOfUsers:
+  ListOfMemberInChatRoom:
     type: object
     properties:
       usernames:
         type: array
         items:
-          $ref: '#/definitions/User'
+          $ref: '#/definitions/MemberInChatRoom'

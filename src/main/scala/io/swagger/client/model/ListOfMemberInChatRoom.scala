@@ -15,8 +15,8 @@ import io.swagger.client.core.ApiModel
 import org.joda.time.DateTime
 import java.util.UUID
 
-case class ListOfUsers (
-  usernames: Option[Seq[User]] = None
+case class ListOfMemberInChatRoom (
+  usernames: Option[Seq[MemberInChatRoom]] = None
 ) extends ApiModel
 
 

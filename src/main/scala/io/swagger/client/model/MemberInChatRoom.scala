@@ -15,7 +15,7 @@ import io.swagger.client.core.ApiModel
 import org.joda.time.DateTime
 import java.util.UUID
 
-case class User (
+case class MemberInChatRoom (
   username: Option[String] = None,
   link: Option[Link] = None
 ) extends ApiModel
