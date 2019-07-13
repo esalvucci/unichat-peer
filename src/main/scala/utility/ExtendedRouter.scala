@@ -1,10 +1,11 @@
 package utility
 
 import akka.actor.{Actor, ActorIdentity, ActorRef, Identify, Props, Terminated}
-import akka.routing.{ActorRefRoutee, ActorSelectionRoutee, AddRoutee, Broadcast, BroadcastGroup, RemoveRoutee}
+import akka.routing._
 import server.WhitePages.{JoinMe, JoinedUserMessage, UnJoinedUserMessage}
 import user.UserInChat.BroadcastMessage
-import utility.ExtendedRouter.Failure
+import utility.ExtendedRouter.{Failure, UserExit}
+
 import scala.collection.immutable.Iterable
 class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends Actor {
 
@@ -19,7 +20,12 @@ class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends
       router ! AddRoutee(ActorSelectionRoutee(remoteActor))
       remoteActor ! Identify(identifyId)
     case UnJoinedUserMessage(userPath) =>
+      println(s"In ExtendedROuter, exit of: $userPath")
       router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userPath)))
+      router ! GetRoutees
+      println("In ExtendedRouter, after GetRoutees")
+    case Routees(routees) => //TODO remove because it is useful only for debug
+      println(routees)
     case Broadcast(BroadcastMessage(content, username, matrix)) =>
       router ! Broadcast(BroadcastMessage(content, username, matrix))
     case JoinMe => router ! Broadcast(JoinMe(sender))
@@ -29,6 +35,7 @@ class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends
       router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userInChatActor.path)))
     case ActorIdentity(1, Some(ref)) =>
       context watch ref
+    case p: UserExit => router ! Broadcast(p)
   }
 
   private def watchRoutees(): Unit =
@@ -42,4 +49,5 @@ object ExtendedRouter {
     Props(new ExtendedRouter(paths, userInChat))
 
   final case class Failure(username: String)
+  final case class UserExit(path: String)
 }

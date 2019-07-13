@@ -1,6 +1,6 @@
 package user
 
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 import ui.MessageActor.ShowWelcomeMessage
 import user.ChatRoom.{Exit, JoinInChatRoom}
 import utility.ExtendedRouter
@@ -10,6 +10,7 @@ import io.swagger.client.ApiInvoker
 import server.WhitePages.{JoinMe, JoinedUserMessage, PutUserChatRoom, ReplyUsersInChat, UnJoinedUserMessage}
 import io.swagger.client.model.MemberInChatRoom
 import io.swagger.client.api.MemberInChatRoomApi
+import utility.ExtendedRouter.UserExit
 
 import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext
@@ -42,7 +43,9 @@ private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
       extendedRouterActor ! JoinMe
 
     case Exit(chatRoom: String) =>
+      println("In ChatRoom: " + chatRoom)
       userApi.removeUserFromChatRoomAsync(chatRoom, username)
+      failureActorOption.get ! UserExit(userAddress(chatRoom))
 
     case Failure(status) => // ToDo send message to MessageActor
 

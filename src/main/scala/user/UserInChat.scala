@@ -5,6 +5,8 @@ import akka.routing.{ActorRefRoutee, ActorSelectionRoutee, AddRoutee, Broadcast,
 import server.WhitePages.{JoinMe, JoinedUserMessage, UnJoinedUserMessage}
 import ui.MessageActor.{ShowMessage, TestMessage}
 import user.CasualOrdering.Matrix
+import user.ChatRoom.Exit
+import utility.ExtendedRouter.UserExit
 
 private class UserInChat(localUsername: String, paths: Seq[String], messenger: ActorRef) extends Actor with CausalOrdering with Stash {
   import UserInChat._
@@ -26,6 +28,7 @@ private class UserInChat(localUsername: String, paths: Seq[String], messenger: A
     case JoinMe(sender) => routerActor ! AddRoutee(ActorRefRoutee(sender))
     case UnJoinedUserMessage(user) => removeReferenceOf(user)
     case Failure(userInFailure) => removeReferenceOf(userInFailure)
+    case UserExit(path) => println(s"In UserInChat, exit of: $path"); routerActor ! UnJoinedUserMessage(path)
 /*
     // TODO Uncomment for debug
     case TestMessage(userAsReceiver, content) =>

@@ -32,9 +32,17 @@ private class MessageActor extends Actor with ActorLogging {
       else showErrorMessage("Insert the correct chat room name")
 
     case text: String if text.contains("@exit") =>
-      userInChatrooms = userInChatrooms.filterNot(user => user._1 == text.split("@").head)
+      val chatRoomName = text.split("@").head
+      val chatRoomPath = userInChatrooms(chatRoomName).path.parent
+      val chatRoomActor = context.actorSelection(chatRoomPath)
+      println("In MessageActor: " + chatRoomName)
+      println("In MessageActor: " + userInChatrooms(chatRoomName).path.parent)
+      userInChatrooms = userInChatrooms.filterNot(user => user._1 == chatRoomName)
+      chatRoomActor ! Exit(chatRoomName)
+
+/*      userInChatrooms = userInChatrooms.filterNot(user => user._1 == text.split("@").head)
       userInChatrooms.filter(user => user._1 == text.split("@").head).head._2 ! Exit(text.split("@").head)
-    case usernameAndChatRoomName: String if usernameAndChatRoomName.contains("@") =>
+*/  case usernameAndChatRoomName: String if usernameAndChatRoomName.contains("@") =>
       val usernameAndChatroomNameSplit = usernameAndChatRoomName.trim.split("@")
       val chatroom = context.actorOf(ChatRoom.props(usernameAndChatroomNameSplit.head, self), name = usernameAndChatroomNameSplit.tail.head)
       chatroom ! JoinInChatRoom(usernameAndChatroomNameSplit.tail.head)
