@@ -36,8 +36,7 @@ private class WhitePages extends Actor {
 object WhitePages {
   def props: Props = Props(new WhitePages)
 
-  final case object JoinMe
-  final case class JoinMe(sender: ActorRef)
+  final case class JoinMe(userPath: String)
   final case class JoinedUserMessage(path: String)
   final case class PutUserChatRoom(path: String, chatRoomName: String)
   final case class DeleteUserFromChatRoom(path: String, chatRoomName: String)

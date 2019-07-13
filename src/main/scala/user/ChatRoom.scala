@@ -39,7 +39,7 @@ private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
       val extendedRouterActor = context.actorOf(ExtendedRouter.props(getLinkFrom(members), userInChatActor), name = failureActorName)
       failureActorOption = Some(extendedRouterActor)
       messenger ! ShowWelcomeMessage(username, chatroomName.get, userInChatActor)
-      extendedRouterActor ! JoinMe
+      extendedRouterActor ! JoinMe(userAddress(chatroomName.get))
 
     case Exit(chatRoom: String) =>
       userApi.removeUserFromChatRoomAsync(chatRoom, username)
