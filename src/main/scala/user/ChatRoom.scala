@@ -27,7 +27,8 @@ private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
       chatroomName = Some(chatRoom)
       val localUserAddress = userAddress(chatRoom)
 /*      whitePages ! PutUserChatRoom(localUserAddress, chatRoom)*/
-      val requestResult = userApi.addUserInChatRoomAsync(chatRoom)
+      val requestResult = userApi.addUserInChatRoomAsync(chatRoom, Some(MemberInChatRoom(Some(username), Some(userAddress(chatRoom)))))
+
       requestResult onComplete {
         case Success(listOfMemberInChatRoom: Seq[MemberInChatRoom]) => self ! listOfMemberInChatRoom
         case Failure(exception) => println(s"Exception: ${exception.getMessage}")
