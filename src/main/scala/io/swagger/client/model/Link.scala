@@ -13,7 +13,10 @@
 package io.swagger.client.model
 
 
+/**
+ * @param link  for example: '''www.example.com/web-chat/resourceSet/resourceName'''
+ */
 case class Link (
-  link: Option[String] = None
+  link: Option[String]
 )
 

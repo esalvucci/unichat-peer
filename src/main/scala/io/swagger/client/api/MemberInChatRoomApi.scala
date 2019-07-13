@@ -46,7 +46,7 @@ import scala.util.{Failure, Success, Try}
 import org.json4s._
 
 class MemberInChatRoomApi(
-  val defBasePath: String = "https://localhost:9000",
+  val defBasePath: String = "http://localhost:9000",
   defApiInvoker: ApiInvoker = ApiInvoker
 ) {
   private lazy val dateTimeFormatter = {
@@ -85,11 +85,12 @@ class MemberInChatRoomApi(
    * Add a user to a particular chat room. 
    *
    * @param chatRoomName The chat room name 
-   * @param username The username to be added.  (optional)
+   * @param body The username to be added.
+ (optional)
    * @return ListOfMemberInChatRoom
    */
-  def addUserInChatRoom(chatRoomName: String, username: Option[MemberInChatRoom] = None): Option[ListOfMemberInChatRoom] = {
-    val await = Try(Await.result(addUserInChatRoomAsync(chatRoomName, username), Duration.Inf))
+  def addUserInChatRoom(chatRoomName: String, body: Option[MemberInChatRoom] = None): Option[ListOfMemberInChatRoom] = {
+    val await = Try(Await.result(addUserInChatRoomAsync(chatRoomName, body), Duration.Inf))
     await match {
       case Success(i) => Some(await.get)
       case Failure(t) => None
@@ -101,11 +102,12 @@ class MemberInChatRoomApi(
    * Add a user to a particular chat room. 
    *
    * @param chatRoomName The chat room name 
-   * @param username The username to be added.  (optional)
+   * @param body The username to be added.
+ (optional)
    * @return Future(ListOfMemberInChatRoom)
    */
-  def addUserInChatRoomAsync(chatRoomName: String, username: Option[MemberInChatRoom] = None): Future[ListOfMemberInChatRoom] = {
-      helper.addUserInChatRoom(chatRoomName, username)
+  def addUserInChatRoomAsync(chatRoomName: String, body: Option[MemberInChatRoom] = None): Future[ListOfMemberInChatRoom] = {
+      helper.addUserInChatRoom(chatRoomName, body)
   }
 
   /**
@@ -141,7 +143,7 @@ class MemberInChatRoomApi(
 class MemberInChatRoomApiAsyncHelper(client: TransportClient, config: SwaggerConfig) extends ApiClient(client, config) {
 
   def addUserInChatRoom(chatRoomName: String,
-    username: Option[MemberInChatRoom] = None
+    body: Option[MemberInChatRoom] = None
     )(implicit reader: ClientResponseReader[ListOfMemberInChatRoom], writer: RequestWriter[Option[MemberInChatRoom]]): Future[ListOfMemberInChatRoom] = {
     // create path and map variables
     val path = (addFmt("/rooms/{chatRoomName}/user")
@@ -154,7 +156,7 @@ class MemberInChatRoomApiAsyncHelper(client: TransportClient, config: SwaggerCon
     if (chatRoomName == null) throw new Exception("Missing required parameter 'chatRoomName' when calling MemberInChatRoomApi->addUserInChatRoom")
 
 
-    val resFuture = client.submit("PUT", path, queryParams.toMap, headerParams.toMap, writer.write(username))
+    val resFuture = client.submit("PUT", path, queryParams.toMap, headerParams.toMap, writer.write(body))
     resFuture flatMap { resp =>
       process(reader.read(resp))
     }

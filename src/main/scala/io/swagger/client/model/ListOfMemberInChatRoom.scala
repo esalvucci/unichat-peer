@@ -13,7 +13,10 @@
 package io.swagger.client.model
 
 
+/**
+ * @param usernames 
+ */
 case class ListOfMemberInChatRoom (
-  usernames: Option[List[MemberInChatRoom]] = None
+  usernames: Option[List[MemberInChatRoom]]
 )
 

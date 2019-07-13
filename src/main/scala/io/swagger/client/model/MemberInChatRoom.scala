@@ -13,8 +13,12 @@
 package io.swagger.client.model
 
 
+/**
+ * @param username  for example: '''name.surnameN'''
+ * @param link 
+ */
 case class MemberInChatRoom (
-  username: Option[String] = None,
-  link: Option[Link] = None
+  username: Option[String],
+  link: Option[Link]
 )
 

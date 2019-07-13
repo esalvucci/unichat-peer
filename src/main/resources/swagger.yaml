@@ -44,7 +44,7 @@ info:
 host: localhost:8080
 basePath: /web-chat
 paths:
-  /rooms/{chatRoomName}/username:
+  /rooms/{chatRoomName}/user:
     parameters: &RoomsParams
       - &RoomsNameParams
         in: path

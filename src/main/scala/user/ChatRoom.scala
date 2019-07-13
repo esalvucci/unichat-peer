@@ -1,6 +1,6 @@
 package user
 
-import akka.actor.Status.{Failure, Success}
+import scala.util.{Success, Failure}
 import ui.MessageActor.ShowWelcomeMessage
 import user.ChatRoom.{Exit, JoinInChatRoom}
 import utility.ExtendedRouter
@@ -28,7 +28,10 @@ private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
       val localUserAddress = userAddress(chatRoom)
 /*      whitePages ! PutUserChatRoom(localUserAddress, chatRoom)*/
       val requestResult = userApi.addUserInChatRoomAsync(chatRoom)
-      requestResult.map(list => self ! list)
+      requestResult onComplete {
+        case Success(listOfMemberInChatRoom: ListOfMemberInChatRoom) => self ! listOfMemberInChatRoom
+        case Failure(exception) => println(s"Exception: ${exception.getMessage}")
+      }
 
     case ListOfMemberInChatRoom(listOfUsers: Option[Seq[MemberInChatRoom]]) =>
       println(listOfUsers)
