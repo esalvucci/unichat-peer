@@ -28,8 +28,11 @@ class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends
       println(routees)
     case Broadcast(BroadcastMessage(content, username, matrix)) =>
       router ! Broadcast(BroadcastMessage(content, username, matrix))
-    case JoinMe => router ! Broadcast(JoinMe(sender))
+    case JoinMe(actorPath) =>
+      router ! Broadcast(JoinedUserMessage(actorPath))
+/*
     case AddRoutee(routee) => router ! AddRoutee(routee)
+*/
     case Terminated(actor) =>
       userInChatActor ! Failure(actor.path.name)
       router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userInChatActor.path)))

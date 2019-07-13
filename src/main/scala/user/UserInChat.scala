@@ -12,37 +12,27 @@ private class UserInChat(localUsername: String, paths: Seq[String], messenger: A
   import UserInChat._
 
   override var username: String = localUsername
-  private val routerActorName = "router-actor"
-  private val routerActor = context.actorSelection(context.self.path.parent + "/" + routerActorName)
+  private val extendedRouterName = "router-actor"
+  private val extendedRouterActor = context.actorSelection(context.self.path.parent + "/" + extendedRouterName)
   populateMap(paths)
 
   override def receive: Receive = {
     case MessageInChat(content) =>
 
       val matrix = sentMessage()
-      routerActor ! Broadcast(BroadcastMessage(content, username, matrix))
+      extendedRouterActor ! Broadcast(BroadcastMessage(content, username, matrix))
 
     case BroadcastMessage(content, user, senderMatrix) =>
       receiveMessage(user, senderMatrix, () => messenger ! ShowMessage(content, user))
 
-    case JoinMe(sender) => routerActor ! AddRoutee(ActorRefRoutee(sender))
-    case UnJoinedUserMessage(user) => removeReferenceOf(user)
-    case Failure(userInFailure) => removeReferenceOf(userInFailure)
-    case UserExit(path) => println(s"In UserInChat, exit of: $path"); routerActor ! UnJoinedUserMessage(path)
-/*
-    // TODO Uncomment for debug
-    case TestMessage(userAsReceiver, content) =>
-      val azzu = "akka.tcp://unichat-system@127.0.0.2:2554/user/messenger-actor/uni/azzu"
-      val frank = "akka.tcp://unichat-system@127.0.0.2:2555/user/messenger-actor/uni/frank"
-      val toBeRemoved = if (azzu.contains(userAsReceiver)) frank else azzu
-      val toSend = if (azzu.contains(userAsReceiver)) azzu else frank
+    case JoinedUserMessage(actorPath) =>
+      extendedRouterActor ! JoinedUserMessage(actorPath)
 
-      context.parent ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(toBeRemoved)))
-      // sentMessage()
-      val matrix = sentMessage()
-      context.actorSelection(toSend) ! BroadcastMessage(content, username, matrix)
-      context.parent ! AddRoutee(ActorSelectionRoutee(context.actorSelection(toSend)))
-*/
+    case UnJoinedUserMessage(user) => removeReferenceOf(user)
+
+    case Failure(userInFailure) => removeReferenceOf(userInFailure)
+
+    case UserExit(path) => println(s"In UserInChat, exit of: $path"); extendedRouterActor ! UnJoinedUserMessage(path)
   }
 
 }
