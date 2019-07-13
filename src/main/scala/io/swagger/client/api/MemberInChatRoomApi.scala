@@ -46,7 +46,7 @@ import scala.util.{Failure, Success, Try}
 import org.json4s._
 
 class MemberInChatRoomApi(
-  val defBasePath: String = "http://localhost:9000",
+  val defBasePath: String = "http://localhost:9000/",
   defApiInvoker: ApiInvoker = ApiInvoker
 ) {
   private lazy val dateTimeFormatter = {

@@ -41,8 +41,8 @@ info:
         * when performing an HTTP request, clients are considered __authenticated__ if they credentials match the ones which are stored on the server side
 
         * when performing an HTTP request, clients are considered __authorized__ if they are authenticated _and_ they their role is enabled to perform the requested operation
-host: localhost:8080
-basePath: /web-chat
+host: localhost:9000
+basePath: /
 paths:
   /rooms/{chatRoomName}/user:
     parameters: &RoomsParams
@@ -71,8 +71,6 @@ paths:
       operationId: addUserInChatRoom
       consumes:
         - application/json
-        - application/xml
-        - application/yaml
       schemes:
         - http
       responses:
@@ -81,7 +79,9 @@ paths:
             Success.
             The user was successfully added to the chat room.
           schema:
-            $ref: "#/definitions/ListOfMemberInChatRoom"
+            type: array
+            items:
+              $ref: '#/definitions/MemberInChatRoom'
         409:
           description: >
             Conflict.
@@ -113,14 +113,6 @@ paths:
           description: User not found
 
 definitions:
-  Link:
-    type: object
-    description: ""
-    properties:
-      link:
-        type: string
-        format: url
-        example: www.example.com/web-chat/resourceSet/resourceName
   MemberInChatRoom:
     description: ""
     type: object
@@ -129,11 +121,5 @@ definitions:
         type: string
         example: name.surnameN
       link:
-        $ref: '#/definitions/Link'
-  ListOfMemberInChatRoom:
-    type: object
-    properties:
-      usernames:
-        type: array
-        items:
-          $ref: '#/definitions/MemberInChatRoom'
+        type: string
+        example: akka://system@ip:port/user/message-actor/chatroom/username
