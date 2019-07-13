@@ -7,6 +7,7 @@ import user.UserInChat.BroadcastMessage
 import utility.ExtendedRouter.{Failure, UserExit}
 
 import scala.collection.immutable.Iterable
+
 class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends Actor {
 
   private val router: ActorRef = context.actorOf(BroadcastGroup(paths).props, "router")
@@ -20,25 +21,18 @@ class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends
       router ! AddRoutee(ActorSelectionRoutee(remoteActor))
       remoteActor ! Identify(identifyId)
     case UnJoinedUserMessage(userPath) =>
-      println(s"In ExtendedROuter, exit of: $userPath")
       router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userPath)))
-      router ! GetRoutees
-      println("In ExtendedRouter, after GetRoutees")
-    case Routees(routees) => //TODO remove because it is useful only for debug
-      println(routees)
     case Broadcast(BroadcastMessage(content, username, matrix)) =>
       router ! Broadcast(BroadcastMessage(content, username, matrix))
     case JoinMe(actorPath) =>
       router ! Broadcast(JoinedUserMessage(actorPath))
-/*
-    case AddRoutee(routee) => router ! AddRoutee(routee)
-*/
+
     case Terminated(actor) =>
       userInChatActor ! Failure(actor.path.name)
       router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userInChatActor.path)))
     case ActorIdentity(1, Some(ref)) =>
       context watch ref
-    case p: UserExit => router ! Broadcast(p)
+    case message: UserExit => router ! Broadcast(message)
   }
 
   private def watchRoutees(): Unit =
@@ -52,5 +46,7 @@ object ExtendedRouter {
     Props(new ExtendedRouter(paths, userInChat))
 
   final case class Failure(username: String)
+
   final case class UserExit(path: String)
+
 }

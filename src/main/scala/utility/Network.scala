@@ -1,7 +1,8 @@
 package utility
 
 import java.net.NetworkInterface
-import java.util
+
+import com.typesafe.config.{Config, ConfigFactory}
 
 /** facility for client networking */
 object Network {
@@ -13,10 +14,22 @@ object Network {
 
   /** get the local address of the machine */
   def lanAddress: String = {
-    NetworkInterface.getNetworkInterfaces.nextElement()
-      .getInterfaceAddresses.get(1)
-      .getAddress
-      .toString.replace("/", "")
+    NetworkInterface.getNetworkInterfaces
+      .nextElement.getInterfaceAddresses
+      .get(0).getAddress.toString
+      .replace("/", "")
+  }
+
+  def config: Config = {
+    ConfigFactory.parseString("akka.remote.netty.tcp.hostname = \"127.0.0.2\"")
+      .withFallback(ConfigFactory.parseString("akka.remote.netty.tcp.port=2556"))
+      .withFallback(ConfigFactory.load())
+  }
+
+  def address: String = {
+    val localHostname = ConfigFactory.load().getString("akka.remote.netty.tcp.hostname")
+    val localPort = ConfigFactory.load().getString("akka.remote.netty.tcp.port")
+    s"akka.tcp://unichat-system@$localHostname:$localPort/user/messenger-actor/"
   }
 
 }

@@ -1,19 +1,19 @@
 package user
 
 import akka.actor.{Actor, ActorRef, Props, Stash}
-import akka.routing.{ActorRefRoutee, ActorSelectionRoutee, AddRoutee, Broadcast, RemoveRoutee}
-import server.WhitePages.{JoinMe, JoinedUserMessage, UnJoinedUserMessage}
-import ui.MessageActor.{ShowMessage, TestMessage}
+import akka.routing.Broadcast
+import server.WhitePages.{JoinedUserMessage, UnJoinedUserMessage}
+import ui.MessageActor.ShowMessage
 import user.CasualOrdering.Matrix
-import user.ChatRoom.Exit
 import utility.ExtendedRouter.UserExit
 
 private class UserInChat(localUsername: String, paths: Seq[String], messenger: ActorRef) extends Actor with CausalOrdering with Stash {
+
   import UserInChat._
 
-  override var username: String = localUsername
   private val extendedRouterName = "router-actor"
   private val extendedRouterActor = context.actorSelection(context.self.path.parent + "/" + extendedRouterName)
+  override var username: String = localUsername
   populateMap(paths)
 
   override def receive: Receive = {
@@ -32,7 +32,7 @@ private class UserInChat(localUsername: String, paths: Seq[String], messenger: A
 
     case Failure(userInFailure) => removeReferenceOf(userInFailure)
 
-    case UserExit(path) => println(s"In UserInChat, exit of: $path"); extendedRouterActor ! UnJoinedUserMessage(path)
+    case UserExit(path) => extendedRouterActor ! UnJoinedUserMessage(path)
   }
 
 }
@@ -42,6 +42,9 @@ object UserInChat {
     Props(new UserInChat(username, paths, messenger))
 
   final case class Failure(username: String)
+
   final case class MessageInChat(content: String)
+
   final case class BroadcastMessage(content: String, username: String, matrix: Matrix)
+
 }
