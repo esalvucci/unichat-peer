@@ -15,10 +15,10 @@ package io.swagger.client.model
 
 /**
  * @param username  for example: '''name.surnameN'''
- * @param link 
+ * @param link  for example: '''akka://system@ip:port/user/message-actor/chatroom/username'''
  */
 case class MemberInChatRoom (
   username: Option[String],
-  link: Option[Link]
+  link: Option[String]
 )
 

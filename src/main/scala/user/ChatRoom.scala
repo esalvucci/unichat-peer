@@ -8,7 +8,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import com.typesafe.config.ConfigFactory
 import io.swagger.client.ApiInvoker
 import server.WhitePages.{JoinMe, JoinedUserMessage, PutUserChatRoom, ReplyUsersInChat, UnJoinedUserMessage}
-import io.swagger.client.model.{ListOfMemberInChatRoom, MemberInChatRoom}
+import io.swagger.client.model.MemberInChatRoom
 import io.swagger.client.api.MemberInChatRoomApi
 
 import scala.collection.immutable.Seq
@@ -29,14 +29,13 @@ private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
 /*      whitePages ! PutUserChatRoom(localUserAddress, chatRoom)*/
       val requestResult = userApi.addUserInChatRoomAsync(chatRoom)
       requestResult onComplete {
-        case Success(listOfMemberInChatRoom: ListOfMemberInChatRoom) => self ! listOfMemberInChatRoom
+        case Success(listOfMemberInChatRoom: Seq[MemberInChatRoom]) => self ! listOfMemberInChatRoom
         case Failure(exception) => println(s"Exception: ${exception.getMessage}")
       }
 
-    case ListOfMemberInChatRoom(listOfUsers: Option[Seq[MemberInChatRoom]]) =>
-      println(listOfUsers)
-      val userInChatActor = context.actorOf(UserInChat.props(username,getLinkFrom(listOfUsers).map(u => extractUsernameFrom(u)), messenger), name = username)
-      val extendedRouterActor = context.actorOf(ExtendedRouter.props(getLinkFrom(listOfUsers), userInChatActor), name = failureActorName)
+    case members: Seq[MemberInChatRoom] =>
+      val userInChatActor = context.actorOf(UserInChat.props(username,getLinkFrom(members).map(u => extractUsernameFrom(u)), messenger), name = username)
+      val extendedRouterActor = context.actorOf(ExtendedRouter.props(getLinkFrom(members), userInChatActor), name = failureActorName)
       failureActorOption = Some(extendedRouterActor)
       messenger ! ShowWelcomeMessage(username, chatroomName.get, userInChatActor)
       extendedRouterActor ! JoinMe
@@ -50,10 +49,8 @@ private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
     case UnJoinedUserMessage(userPath) => failureActorOption.get ! UnJoinedUserMessage(userPath)
   }
 
-  private def getLinkFrom(users: Option[Seq[MemberInChatRoom]]): Seq[String] = users match {
-    case Some(user) => user.map(_.link).map(_.get.link.get)
-    case None => Seq.empty
-  }
+  private def getLinkFrom(users: Seq[MemberInChatRoom]): Seq[String] = users.map(_.link).map(_.get)
+
   private def extractUsernameFrom(user: String) = user.substring(user.lastIndexOf("/") + 1)
 
   private def userAddress(chatRoom: String): String = {

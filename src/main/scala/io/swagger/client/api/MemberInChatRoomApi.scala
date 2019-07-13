@@ -14,7 +14,6 @@ package io.swagger.client.api
 
 import java.text.SimpleDateFormat
 
-import io.swagger.client.model.ListOfMemberInChatRoom
 import io.swagger.client.model.MemberInChatRoom
 import io.swagger.client.{ApiInvoker, ApiException}
 
@@ -87,9 +86,9 @@ class MemberInChatRoomApi(
    * @param chatRoomName The chat room name 
    * @param body The username to be added.
  (optional)
-   * @return ListOfMemberInChatRoom
+   * @return List[MemberInChatRoom]
    */
-  def addUserInChatRoom(chatRoomName: String, body: Option[MemberInChatRoom] = None): Option[ListOfMemberInChatRoom] = {
+  def addUserInChatRoom(chatRoomName: String, body: Option[MemberInChatRoom] = None): Option[List[MemberInChatRoom]] = {
     val await = Try(Await.result(addUserInChatRoomAsync(chatRoomName, body), Duration.Inf))
     await match {
       case Success(i) => Some(await.get)
@@ -104,9 +103,9 @@ class MemberInChatRoomApi(
    * @param chatRoomName The chat room name 
    * @param body The username to be added.
  (optional)
-   * @return Future(ListOfMemberInChatRoom)
+   * @return Future(List[MemberInChatRoom])
    */
-  def addUserInChatRoomAsync(chatRoomName: String, body: Option[MemberInChatRoom] = None): Future[ListOfMemberInChatRoom] = {
+  def addUserInChatRoomAsync(chatRoomName: String, body: Option[MemberInChatRoom] = None): Future[List[MemberInChatRoom]] = {
       helper.addUserInChatRoom(chatRoomName, body)
   }
 
@@ -144,7 +143,7 @@ class MemberInChatRoomApiAsyncHelper(client: TransportClient, config: SwaggerCon
 
   def addUserInChatRoom(chatRoomName: String,
     body: Option[MemberInChatRoom] = None
-    )(implicit reader: ClientResponseReader[ListOfMemberInChatRoom], writer: RequestWriter[Option[MemberInChatRoom]]): Future[ListOfMemberInChatRoom] = {
+    )(implicit reader: ClientResponseReader[List[MemberInChatRoom]], writer: RequestWriter[Option[MemberInChatRoom]]): Future[List[MemberInChatRoom]] = {
     // create path and map variables
     val path = (addFmt("/rooms/{chatRoomName}/user")
       replaceAll("\\{" + "chatRoomName" + "\\}", chatRoomName.toString))
