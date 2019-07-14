@@ -1,4 +1,4 @@
-package utility
+package unichat.utility
 
 import java.net.NetworkInterface
 

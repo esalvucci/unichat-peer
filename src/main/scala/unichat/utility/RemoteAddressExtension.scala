@@ -1,4 +1,4 @@
-package utility
+package unichat.utility
 
 import akka.actor.{ActorSystem, Address, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
 

@@ -5,26 +5,11 @@ version := "0.1"
 scalaVersion in ThisBuild:= "2.11.12"
 lazy val akkaVersion = "2.5.12"
 
-/*
-libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
-libraryDependencies += "com.typesafe.akka" %% "akka-stream" % akkaVersion
-libraryDependencies += "com.typesafe.akka" %% "akka-remote" % akkaVersion
-libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % akkaVersion
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % "test"
-libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
-libraryDependencies += "com.typesafe" % "config" % "1.3.2"
-libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.8"
-libraryDependencies += "io.spray" % "spray-client" % "1.3.1"
-libraryDependencies += "joda-time" % "joda-time" % "2.9.9"
-libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.5.3"
-*/
-
-libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
-libraryDependencies += "com.typesafe.akka" %% "akka-stream" % akkaVersion
-libraryDependencies += "com.typesafe.akka" %% "akka-remote" % akkaVersion
-libraryDependencies += "io.netty" % "netty" % "3.6.3.Final" force()
-
-libraryDependencies ++= Seq("io.swagger" % "swagger-core" % "1.5.8",
+libraryDependencies ++= Seq("com.typesafe.akka" %% "akka-actor" % akkaVersion,
+"com.typesafe.akka" %% "akka-stream" % akkaVersion,
+"com.typesafe.akka" %% "akka-remote" % akkaVersion,
+"io.netty" % "netty" % "3.6.3.Final" force(),
+"io.swagger" % "swagger-core" % "1.5.8",
 "com.wordnik.swagger" %% "swagger-async-httpclient" % "0.3.5",
 "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.2",
 "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % "2.9.2",

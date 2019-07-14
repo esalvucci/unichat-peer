@@ -1,10 +1,8 @@
-package io.swagger.client
-
-import io.swagger.client.api._
-
-import com.wordnik.swagger.client._
+package unichat.io.swagger.client.api
 
 import java.io.Closeable
+
+import com.wordnik.swagger.client._
 
 class AsyncClient(config: SwaggerConfig) extends Closeable {
   lazy val locator: ServiceLocator = config.locator

@@ -1,26 +1,28 @@
-package user
+package unichat.user
 
 import akka.actor.{Actor, ActorRef, Props, Stash}
 import akka.routing.Broadcast
-import ui.MessageActor.ShowMessage
-import user.CasualOrdering.Matrix
-import user.ChatMessages.{JoinedUserMessage, UnJoinedUserMessage}
-import utility.ExtendedRouter.UserExit
+import CasualOrdering.Matrix
+import ChatMessages.{JoinedUserMessage, UnJoinedUserMessage}
+import unichat.ui.MessageActor.ShowMessage
+import unichat.utility.ExtendedRouter._
 
-private class UserInChat(localUsername: String, paths: Seq[String], messenger: ActorRef) extends Actor with CausalOrdering with Stash {
+private class MemberInChatroom(localUsername: String, paths: Seq[String], messenger: ActorRef)
+  extends Actor with CausalOrdering with Stash {
 
-  import UserInChat._
+  import MemberInChatroom._
 
-  private val extendedRouterName = "router-actor"
-  private val extendedRouterActor = context.actorSelection(context.self.path.parent + "/" + extendedRouterName)
-  override var username: String = localUsername
+  private val pathSeparator = "/"
+  private val extendedRouterActor = context.actorSelection(context.self.path.parent + pathSeparator + extendedRouterName)
+
+  username_=(localUsername)
   populateMap(paths)
 
   override def receive: Receive = {
     case MessageInChat(content) =>
 
       val matrix = sentMessage()
-      extendedRouterActor ! Broadcast(BroadcastMessage(content, username, matrix))
+      extendedRouterActor ! Broadcast(BroadcastMessage(content, _username.get, matrix))
 
     case BroadcastMessage(content, user, senderMatrix) =>
       receiveMessage(user, senderMatrix, () => messenger ! ShowMessage(content, user))
@@ -34,12 +36,11 @@ private class UserInChat(localUsername: String, paths: Seq[String], messenger: A
 
     case UserExit(path) => extendedRouterActor ! UnJoinedUserMessage(path)
   }
-
 }
 
-object UserInChat {
+object MemberInChatroom {
   def props(username: String, paths: Seq[String], messenger: ActorRef): Props =
-    Props(new UserInChat(username, paths, messenger))
+    Props(new MemberInChatroom(username, paths, messenger))
 
   final case class Failure(username: String)
 

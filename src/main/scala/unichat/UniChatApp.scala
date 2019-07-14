@@ -1,5 +1,7 @@
+package unichat
+
 import akka.actor.ActorSystem
-import ui.MessageActor
+import unichat.ui.MessageActor
 
 object UniChatApp extends App {
   val messageActorName = "messenger-actor"
