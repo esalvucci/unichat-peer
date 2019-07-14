@@ -13,7 +13,7 @@ class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends
   private val router: ActorRef = context.actorOf(BroadcastGroup(paths).props, "router")
   private val identifyId = 1
 
-  watchRoutees()
+  identifyRoutees()
 
   override def receive: Receive = {
     case JoinedUserMessage(userPath) =>
@@ -40,7 +40,7 @@ class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends
     case message: UserExit => router ! Broadcast(message)
   }
 
-  private def watchRoutees(): Unit =
+  private def identifyRoutees(): Unit =
     paths.map(a => context.actorSelection(a)).foreach(u => {
       u ! Identify(identifyId)
     })
