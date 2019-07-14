@@ -3,8 +3,8 @@ package user
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import io.swagger.client.api.MemberInChatRoomApi
 import io.swagger.client.model.MemberInChatRoom
-import server.WhitePages.{JoinMe, JoinedUserMessage, UnJoinedUserMessage}
 import ui.MessageActor.{ShowExitMessage, ShowWelcomeMessage}
+import user.ChatMessages.{JoinMe, JoinedUserMessage, UnJoinedUserMessage}
 import user.ChatRoom.{Exit, JoinInChatRoom}
 import utility.ExtendedRouter.UserExit
 import utility.{ExtendedRouter, RemoteAddressExtension}
@@ -42,8 +42,6 @@ private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
       failureActorOption.get ! UserExit(userAddress)
       messenger ! ShowExitMessage(chatroomName.get, username)
       self ! PoisonPill
-
-    case Failure(status) => // ToDo send message to MessageActor
 
     case JoinedUserMessage(userPath) => failureActorOption.get ! JoinedUserMessage(userPath)
     case UnJoinedUserMessage(userPath) => failureActorOption.get ! UnJoinedUserMessage(userPath)

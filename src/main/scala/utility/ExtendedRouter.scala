@@ -2,7 +2,7 @@ package utility
 
 import akka.actor.{Actor, ActorIdentity, ActorRef, Identify, Props, Terminated}
 import akka.routing._
-import server.WhitePages.{JoinMe, JoinedUserMessage, UnJoinedUserMessage}
+import user.ChatMessages.{JoinMe, JoinedUserMessage, UnJoinedUserMessage}
 import user.UserInChat.BroadcastMessage
 import utility.ExtendedRouter.{Failure, UserExit}
 

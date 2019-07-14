@@ -2,9 +2,9 @@ package user
 
 import akka.actor.{Actor, ActorRef, Props, Stash}
 import akka.routing.Broadcast
-import server.WhitePages.{JoinedUserMessage, UnJoinedUserMessage}
 import ui.MessageActor.ShowMessage
 import user.CasualOrdering.Matrix
+import user.ChatMessages.{JoinedUserMessage, UnJoinedUserMessage}
 import utility.ExtendedRouter.UserExit
 
 private class UserInChat(localUsername: String, paths: Seq[String], messenger: ActorRef) extends Actor with CausalOrdering with Stash {
