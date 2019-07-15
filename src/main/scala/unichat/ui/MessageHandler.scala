@@ -10,9 +10,9 @@ import unichat.user.MemberInChatroom.MessageInChat
 
 import scala.concurrent.Future
 
-private class MessageActor extends Actor with ActorLogging {
+private class MessageHandler extends Actor with ActorLogging {
 
-  import MessageActor._
+  import MessageHandler._
 
   implicit val materializer: Materializer = ActorMaterializer()
   private val stdinSource: Source[ByteString, Future[IOResult]] = StreamConverters.fromInputStream(() => System.in)
@@ -73,8 +73,8 @@ private class MessageActor extends Actor with ActorLogging {
   showJoinMessage()
 }
 
-object MessageActor {
-  def props: Props = Props(new MessageActor)
+object MessageHandler {
+  def props: Props = Props(new MessageHandler)
 
   final case class ShowMessage(content: String, sender: String)
 
