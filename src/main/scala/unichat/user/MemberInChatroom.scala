@@ -20,7 +20,6 @@ private class MemberInChatroom(localUsername: String, paths: Seq[String], messen
 
   override def receive: Receive = {
     case MessageInChat(content) =>
-
       val matrix = sentMessage()
       extendedRouterActor ! Broadcast(BroadcastMessage(content, _username.get, matrix))
 
@@ -30,11 +29,11 @@ private class MemberInChatroom(localUsername: String, paths: Seq[String], messen
     case JoinedUserMessage(actorPath) =>
       extendedRouterActor ! JoinedUserMessage(actorPath)
 
-    case UnJoinedUserMessage(user) => removeReferenceOf(user)
-
     case Failure(userInFailure) => removeReferenceOf(userInFailure)
 
-    case UserExit(path) => extendedRouterActor ! UnJoinedUserMessage(path)
+    case UserExit(path) =>
+      removeReferenceOf(path)
+      extendedRouterActor ! UnJoinedUserMessage(path)
   }
 }
 

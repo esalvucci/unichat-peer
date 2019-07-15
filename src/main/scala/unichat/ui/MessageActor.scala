@@ -24,24 +24,29 @@ private class MessageActor extends Actor with ActorLogging {
   stdinSource.map(text => text.utf8String).runForeach(sendTypedText)
 
   override def receive: Receive = {
-    case text: String if messagePattern.findFirstIn(text).isDefined =>
-      val messagePattern(chatroom, content) = text
-      val receiver = memberInChatrooms.get(chatroom)
-      if (receiver.isDefined) receiver.get ! MessageInChat(content)
-      else showErrorMessage("Insert the correct chat room name")
+    case text: String => text match {
+      case messagePattern(chatRoom, content) =>
+        val receiver = memberInChatrooms.get(chatRoom)
+        if (receiver.isDefined) receiver.get ! MessageInChat(content)
+        else showErrorMessage("Insert the correct chat room name")
 
-    case text: String if exitPattern.findFirstIn(text).isDefined =>
-      val exitPattern(chatroom) = getStringWithoutSpaces(text)
-      val chatRoomPath = memberInChatrooms(chatroom).path.parent
-      val chatRoomActor = context.actorSelection(chatRoomPath)
-      memberInChatrooms = memberInChatrooms.filterNot(user => user._1 == chatroom)
-      chatRoomActor ! Exit
+      case t: String => getStringWithoutSpaces(t) match {
+        case exitPattern(chatRoom) =>
+          val chatRoomPath = memberInChatrooms(chatRoom).path.parent
+          val chatRoomActor = context.actorSelection(chatRoomPath)
+          memberInChatrooms = memberInChatrooms.filterNot(user => user._1 == chatRoom)
+          chatRoomActor ! Exit
 
-    case usernameAndChatRoomName: String if joinPattern.findFirstIn(usernameAndChatRoomName).isDefined =>
-      val joinPattern(username, chatroomName) = getStringWithoutSpaces(usernameAndChatRoomName)
-      val chatroomActor =
-        context.actorOf(ChatRoom.props(username, self), chatroomName)
-      chatroomActor ! JoinInChatRoom(chatroomName)
+        case joinPattern(username, chatRoomName) =>
+          val chatRoomActor =
+            context.actorOf(ChatRoom.props(username, self), chatRoomName)
+          chatRoomActor ! JoinInChatRoom(chatRoomName)
+      }
+
+      case _ =>
+        showErrorMessage("enter correct data!")
+        showJoinMessage()
+    }
 
     case ShowWelcomeMessage(username: String, chatRoom: String, actor: ActorRef) =>
       memberInChatrooms = memberInChatrooms + (chatRoom -> actor)
@@ -49,14 +54,10 @@ private class MessageActor extends Actor with ActorLogging {
 
     case ShowMessage(content, sender) => println(s"$sender: $content")
 
-    case ShowExitMessage(chatroom, username) => println(s"From chat room $chatroom: bye bye $username!")
+    case ShowExitMessage(chatRoom, username) => println(s"From chat room $chatRoom: bye bye $username!")
 
     case ErrorJoin(errorText) =>
       showErrorMessage(errorText)
-      showJoinMessage()
-
-    case _: String =>
-      showErrorMessage("enter correct data!")
       showJoinMessage()
   }
 
@@ -77,7 +78,7 @@ object MessageActor {
 
   final case class ShowMessage(content: String, sender: String)
 
-  final case class ShowExitMessage(chatroom: String, username: String)
+  final case class ShowExitMessage(chatRoom: String, username: String)
 
   final case class ShowWelcomeMessage(username: String, chatRoom: String, actor: ActorRef)
 

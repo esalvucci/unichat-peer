@@ -3,7 +3,6 @@ package unichat.utility
 import akka.actor.{Actor, ActorIdentity, ActorRef, Identify, Props, Terminated}
 import akka.routing._
 import unichat.user.ChatMessages.{JoinedUserMessage, UnJoinedUserMessage}
-import unichat.user.MemberInChatroom.BroadcastMessage
 import ExtendedRouter.{Failure, JoinMe, UserExit}
 
 import scala.collection.immutable.Iterable
@@ -24,8 +23,7 @@ class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends
     case UnJoinedUserMessage(userPath) =>
       router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userPath)))
 
-    case Broadcast(BroadcastMessage(content, username, matrix)) =>
-      router ! Broadcast(BroadcastMessage(content, username, matrix))
+    case broadcast: Broadcast => router ! broadcast
 
     case JoinMe(actorPath) =>
       router ! Broadcast(JoinedUserMessage(actorPath))
