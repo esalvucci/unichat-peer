@@ -2,7 +2,7 @@ package unichat.utility
 
 import akka.actor.{Actor, ActorIdentity, ActorRef, Identify, Props, Terminated}
 import akka.routing._
-import unichat.user.ChatMessages.{JoinedUserMessage, UnJoinedUserMessage}
+import unichat.user.ChatMessages.{JoinedUser, UnJoinedUser}
 import unichat.user.MemberInChatroom.BroadcastMessage
 import ExtendedRouter.{Failure, JoinMe, UserExit}
 
@@ -16,19 +16,19 @@ class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends
   identifyRoutees()
 
   override def receive: Receive = {
-    case JoinedUserMessage(userPath) =>
+    case JoinedUser(userPath) =>
       val remoteActor = context.actorSelection(userPath)
       router ! AddRoutee(ActorSelectionRoutee(remoteActor))
       remoteActor ! Identify(identifyId)
 
-    case UnJoinedUserMessage(userPath) =>
+    case UnJoinedUser(userPath) =>
       router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userPath)))
 
     case Broadcast(BroadcastMessage(content, username, matrix)) =>
       router ! Broadcast(BroadcastMessage(content, username, matrix))
 
     case JoinMe(actorPath) =>
-      router ! Broadcast(JoinedUserMessage(actorPath))
+      router ! Broadcast(JoinedUser(actorPath))
 
     case Terminated(actor) =>
       userInChatActor ! Failure(actor.path.name)

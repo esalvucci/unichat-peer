@@ -2,9 +2,9 @@ package unichat.user
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import unichat.io.swagger.client.model.{MemberInChatRoom, MemberInChatRoomApi}
-import ChatMessages.{JoinedUserMessage, UnJoinedUserMessage}
+import ChatMessages.{JoinedUser, UnJoinedUser}
 import ChatRoom.{Exit, JoinInChatRoom}
-import unichat.ui.MessageActor.{ShowExitMessage, ShowWelcomeMessage}
+import unichat.ui.MessageHandler.{ShowExitMessage, ShowWelcomeMessage}
 import unichat.utility.{ExtendedRouter, RemoteAddressExtension}
 import unichat.utility.ExtendedRouter.{JoinMe, UserExit}
 
@@ -15,51 +15,53 @@ import scala.util.{Failure, Success}
 private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
   private implicit val executionContext: ExecutionContext = context.dispatcher
   private val userApi = new MemberInChatRoomApi()
-  private val pathSeparator: String = "/"
+  private val / = "/"
   private var extendedRouterActor: Option[ActorRef] = None
-  private var chatroomName: Option[String] = None
+
+  override def preStart(): Unit = {
+    val addResult = userApi.addUserInChatRoomAsync(chatRoomName, Some(MemberInChatRoom(Some(username), Some(getMemberAddress))))
+    addResult onComplete {
+      case Success(listOfMembersInChatRoom: Seq[MemberInChatRoom]) => self ! listOfMembersInChatRoom
+      case Failure(exception) => println(s"Exception: ${exception.getMessage}")
+    }
+  }
+
+  override def postStop(): Unit = gracefulStop()
 
   override def receive: Receive = {
-    case JoinInChatRoom(chatRoom) =>
-      chatroomName = Some(chatRoom)
-      val addResult = userApi.addUserInChatRoomAsync(chatRoom, Some(MemberInChatRoom(Some(username), Some(getMemberAddress))))
-      addResult onComplete {
-        case Success(listOfMembersInChatRoom: Seq[MemberInChatRoom]) => self ! listOfMembersInChatRoom
-        case Failure(exception) => println(s"Exception: ${exception.getMessage}")
-      }
-
     case members: Seq[MemberInChatRoom] =>
       val memberInChatRoom =
         context.actorOf(MemberInChatroom.props(username, members.map(getUsernameFrom), messenger), name = username)
       val extendedRouterActorRef = context.actorOf(ExtendedRouter.props(members.map(getLinkFrom), memberInChatRoom),
         name = ExtendedRouter.extendedRouterName)
       extendedRouterActor = Some(extendedRouterActorRef)
-      messenger ! ShowWelcomeMessage(username, chatroomName.get, memberInChatRoom)
+      messenger ! ShowWelcomeMessage(username, chatRoomName, memberInChatRoom)
       extendedRouterActorRef ! JoinMe(getMemberAddress)
 
     case Exit =>
-      userApi.removeUserFromChatRoomAsync(chatroomName.get, username)
-      extendedRouterActor.get ! UserExit(getMemberAddress)
-      messenger ! ShowExitMessage(chatroomName.get, username)
-      self ! PoisonPill
+      gracefulStop()
 
-    case JoinedUserMessage(userPath) =>
-      extendedRouterActor.get ! JoinedUserMessage(userPath)
+  }
 
-    case UnJoinedUserMessage(userPath) =>
-      extendedRouterActor.get ! UnJoinedUserMessage(userPath)
+  private def gracefulStop(): Unit = {
+    userApi.removeUserFromChatRoomAsync(chatRoomName, username)
+    extendedRouterActor.get ! UserExit(getMemberAddress)
+    messenger ! ShowExitMessage(chatRoomName, username)
+    self ! PoisonPill
   }
 
   private def getLinkFrom(memberInChatRoom: MemberInChatRoom) = memberInChatRoom.link.getOrElse("")
 
   private def getUsernameFrom(memberInChatRoom: MemberInChatRoom) = {
     val link = getLinkFrom(memberInChatRoom)
-    link.substring(link.lastIndexOf(pathSeparator) + 1)
+    link.substring(link.lastIndexOf(/) + 1)
   }
+
+  private def chatRoomName = context.self.path.name
 
   private def getMemberAddress: String = {
     RemoteAddressExtension.get(context.system).address.toString concat self.path
-      .toStringWithoutAddress concat pathSeparator concat username
+      .toStringWithoutAddress concat / concat username
   }
 }
 

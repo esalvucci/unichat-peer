@@ -1,7 +1,7 @@
 package unichat
 
 import akka.actor.ActorSystem
-import unichat.ui.MessageActor
+import unichat.ui.MessageHandler
 
 object UniChatApp extends App {
   val messageActorName = "messenger-actor"
@@ -11,5 +11,5 @@ object UniChatApp extends App {
   val whitePagesName = "white-pages"
 
   val actorSystem = ActorSystem.create(actorSystemName)
-  actorSystem.actorOf(MessageActor.props, messageActorName)
+  actorSystem.actorOf(MessageHandler.props, messageActorName)
 }

@@ -3,8 +3,8 @@ package unichat.user
 import akka.actor.{Actor, ActorRef, Props, Stash}
 import akka.routing.Broadcast
 import CasualOrdering.Matrix
-import ChatMessages.{JoinedUserMessage, UnJoinedUserMessage}
-import unichat.ui.MessageActor.ShowMessage
+import ChatMessages.{JoinedUser, UnJoinedUser}
+import unichat.ui.MessageHandler.ShowMessage
 import unichat.utility.ExtendedRouter._
 
 private class MemberInChatroom(localUsername: String, paths: Seq[String], messenger: ActorRef)
@@ -27,14 +27,16 @@ private class MemberInChatroom(localUsername: String, paths: Seq[String], messen
     case BroadcastMessage(content, user, senderMatrix) =>
       receiveMessage(user, senderMatrix, () => messenger ! ShowMessage(content, user))
 
-    case JoinedUserMessage(actorPath) =>
-      extendedRouterActor ! JoinedUserMessage(actorPath)
+    case JoinedUser(actorPath) =>
+      extendedRouterActor ! JoinedUser(actorPath)
 
-    case UnJoinedUserMessage(user) => removeReferenceOf(user)
+    case UnJoinedUser(userPath) =>
+      removeReferenceOf(userPath)
+      extendedRouterActor ! UnJoinedUser(userPath)
 
     case Failure(userInFailure) => removeReferenceOf(userInFailure)
 
-    case UserExit(path) => extendedRouterActor ! UnJoinedUserMessage(path)
+    case UserExit(path) => extendedRouterActor ! UnJoinedUser(path)
   }
 }
 
