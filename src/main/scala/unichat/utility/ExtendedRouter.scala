@@ -34,20 +34,15 @@ class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends
     case TerminatedActorNotification(suspicious, actorRef: ActorRef) =>
       if (suspiciousActors != suspicious) {
         suspiciousActors = suspiciousActors.filterNot(_ == sender) ++ suspicious
-        println("Added To other suspicious " + actorRef)
       } else {
         userInChatActor ! Failure(actorRef.path.name)
         router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(actorRef.path)))
         suspiciousActors = suspiciousActors.filterNot(_ == actorRef)
-        println("Removed " + actorRef)
       }
-      println(suspiciousActors)
 
     case Terminated(actor) =>
       suspiciousActors += actor
       router ! Broadcast(TerminatedActorNotification(suspiciousActors, actor))
-//      userInChatActor ! Failure(actor.path.name)
-//      router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userInChatActor.path)))
 
     case ActorIdentity(1, Some(ref)) =>
       context watch ref
