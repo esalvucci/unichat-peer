@@ -10,6 +10,10 @@ import unichat.user.MemberInChatroom.MessageInChat
 
 import scala.concurrent.Future
 
+/**
+  * Actor which manages the messages sent by a user.
+  * It also keep track of the chatrooms joined by a user.
+  */
 private class MessageHandler extends Actor with ActorLogging {
 
   import MessageHandler._
@@ -73,6 +77,9 @@ private class MessageHandler extends Actor with ActorLogging {
   showJoinMessage()
 }
 
+/**
+  * Companion object for the MessageHandler class.
+  */
 object MessageHandler {
   def props: Props = Props(new MessageHandler)
 

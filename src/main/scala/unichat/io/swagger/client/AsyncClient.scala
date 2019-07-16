@@ -1,4 +1,4 @@
-package unichat.io.swagger.client.api
+package unichat.io.swagger.client
 
 import java.io.Closeable
 

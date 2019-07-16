@@ -1,14 +1,20 @@
 package unichat.user
 
-import akka.actor.{Actor, ActorRef, Props, Stash}
+import akka.actor.{Actor, ActorRef, Props}
 import akka.routing.Broadcast
 import CasualOrdering.Matrix
 import ChatMessages.{JoinedUser, UnJoinedUser}
 import unichat.ui.MessageHandler.ShowMessage
 import unichat.utility.ExtendedRouter._
 
-private class MemberInChatroom(localUsername: String, paths: Seq[String], messenger: ActorRef)
-  extends Actor with CausalOrdering with Stash {
+/**
+  * Actor representing the user (member) joined in a specific chatroom.
+  * @param localUsername The user's username.
+  * @param remoteMembersLinks The remote links of the other users in a chatroom.
+  * @param messageHandlerActor The actor which manages the messages sent by a user.
+  */
+private class MemberInChatroom(localUsername: String, remoteMembersLinks: Seq[String], messageHandlerActor: ActorRef)
+  extends Actor with CausalOrdering {
 
   import MemberInChatroom._
 
@@ -16,7 +22,7 @@ private class MemberInChatroom(localUsername: String, paths: Seq[String], messen
   private val extendedRouterActor = context.actorSelection(context.self.path.parent + pathSeparator + extendedRouterName)
 
   username_=(localUsername)
-  populateMap(paths)
+  populateMatrix(remoteMembersLinks)
 
   override def receive: Receive = {
     case MessageInChat(content) =>
@@ -24,7 +30,7 @@ private class MemberInChatroom(localUsername: String, paths: Seq[String], messen
       extendedRouterActor ! Broadcast(BroadcastMessage(content, _username.get, matrix))
 
     case BroadcastMessage(content, user, senderMatrix) =>
-      receiveMessage(user, senderMatrix, () => messenger ! ShowMessage(content, user))
+      receiveMessage(user, senderMatrix, () => messageHandlerActor ! ShowMessage(content, user))
 
     case JoinedUser(actorPath) =>
       extendedRouterActor ! JoinedUser(actorPath)
@@ -38,6 +44,9 @@ private class MemberInChatroom(localUsername: String, paths: Seq[String], messen
   }
 }
 
+/**
+  * Companion object for the MemberInChatroom class
+  */
 object MemberInChatroom {
   def props(username: String, paths: Seq[String], messenger: ActorRef): Props =
     Props(new MemberInChatroom(username, paths, messenger))

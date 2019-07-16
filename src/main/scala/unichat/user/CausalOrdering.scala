@@ -5,6 +5,9 @@ import CasualOrdering.Matrix
 
 import scala.collection.immutable.Map
 
+/**
+  * Trait that manage the ordering of the messages sent by an user according to the happened-before causal relationship.
+  */
 trait CausalOrdering extends Stash {
 
   private var matrix: Matrix = Map.empty
@@ -13,31 +16,50 @@ trait CausalOrdering extends Stash {
   protected def _username: Option[String] = username
   protected def username_= (value: String ): Unit = username = Some(value)
 
-  def populateMap(users: Seq[String]): Unit =
+  /**
+    * Populate the matrix of the users (identified by their usernames) and the sent messages.
+    * @param usernames The usernames of a chatroom
+    */
+  def populateMatrix(usernames: Seq[String]): Unit =
     matrix ++
-      users.map(f => (f, username.get) -> 0).toMap ++
-      users.map(f => (username.get, f) -> 0).toMap
+      usernames.map(f => (f, username.get) -> 0).toMap ++
+      usernames.map(f => (username.get, f) -> 0).toMap
 
-
+  /**
+    * @return The matrix of the sent messages.
+    */
   def sentMessage(): Matrix = {
     val currentMatrix: Matrix = Map.canBuildFrom(matrix).result()
     updateSentMessages()
     currentMatrix
   }
 
-  private def updateSentMessages(): Unit =
-    matrix = matrix ++ matrix.filter(pair => pair._1._1 == username.get)
-      .map {case ((sender: String, receiver: String), receivedMessages: Int) => ((sender, receiver), receivedMessages + 1)}
-
-  def receiveMessage(user: String, senderMatrix: Matrix, function: () => Unit): Unit = {
-    if (eligible(user, senderMatrix)) {
-      updateReceivedMessages(user, senderMatrix)
+  /**
+    * Manage a message naming it eligible or not.
+    * @param username The username of a user.
+    * @param senderMatrix The matrix of the sender of the message
+    * @param function
+    */
+  def receiveMessage(username: String, senderMatrix: Matrix, function: () => Unit): Unit = {
+    if (eligible(username, senderMatrix)) {
+      updateReceivedMessages(username, senderMatrix)
       function()
       unstashAll()
     } else {
       stash()
     }
   }
+
+  /**
+    * Remove a user from the matrix in case of exit (for all reason) from a chatroom.
+    * @param username
+    */
+  def removeReferenceOf(username: String): Unit =
+    matrix = matrix.filterNot(pair => pair._1._1 == username || pair._1._2 == username)
+
+  private def updateSentMessages(): Unit =
+    matrix = matrix ++ matrix.filter(pair => pair._1._1 == username.get)
+      .map {case ((sender: String, receiver: String), receivedMessages: Int) => ((sender, receiver), receivedMessages + 1)}
 
   private def eligible(remote: String, senderMatrix: Matrix): Boolean = {
     val receivedMessageInLocal = extractColumnOf(username.get, matrix, remote)
@@ -66,9 +88,6 @@ trait CausalOrdering extends Stash {
       if (remoteMessages > receivedMessages) remoteMessages
     }
   }
-
-  def removeReferenceOf(user: String): Unit =
-    matrix = matrix.filterNot(pair => pair._1._1 == user || pair._1._2 == user)
 }
 
 object CasualOrdering {

@@ -10,7 +10,7 @@
  * Do not edit the class manually.
  */
 
-package unichat.io.swagger.client.api
+package unichat.io.swagger.client
 
 import java.io.File
 import java.net.URLEncoder

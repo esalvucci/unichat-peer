@@ -10,7 +10,7 @@
  * Do not edit the class manually.
  */
 
-package unichat.io.swagger.client.model
+package unichat.io.swagger.client.api
 
 import java.net.URI
 import java.text.SimpleDateFormat
@@ -20,7 +20,8 @@ import com.wordnik.swagger.client.ClientResponseReaders.Json4sFormatsReader._
 import com.wordnik.swagger.client.RequestWriters.Json4sFormatsWriter._
 import com.wordnik.swagger.client._
 import org.json4s._
-import unichat.io.swagger.client.api.ApiInvoker
+import unichat.io.swagger.client.ApiInvoker
+import unichat.io.swagger.client.model.MemberInChatRoom
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
