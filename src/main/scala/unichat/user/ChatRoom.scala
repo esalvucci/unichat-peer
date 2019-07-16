@@ -12,13 +12,7 @@ import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-/**
-  * Actor which models a chatroom.
-  * It has two children actors: the ExtendedRouter and the MemberInChatroom.
-  * @param username The username of the local member in the chatroom.
-  * @param messageHandlerActor The actor which manages the messages sent by a user.
-  */
-private class ChatRoom(username: String, messageHandlerActor: ActorRef) extends Actor {
+private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
   private implicit val executionContext: ExecutionContext = context.dispatcher
   private val userApi = new MemberInChatRoomApi()
   private val / = "/"
@@ -37,11 +31,11 @@ private class ChatRoom(username: String, messageHandlerActor: ActorRef) extends 
   override def receive: Receive = {
     case members: Seq[MemberInChatRoom] =>
       val memberInChatRoom =
-        context.actorOf(MemberInChatroom.props(username, members.map(getUsernameFrom), messageHandlerActor), name = username)
+        context.actorOf(MemberInChatroom.props(username, members.map(getUsernameFrom), messenger), name = username)
       val extendedRouterActorRef = context.actorOf(ExtendedRouter.props(members.map(getLinkFrom), memberInChatRoom),
         name = ExtendedRouter.extendedRouterName)
       extendedRouterActor = Some(extendedRouterActorRef)
-      messageHandlerActor ! ShowWelcomeMessage(username, chatRoomName, memberInChatRoom)
+      messenger ! ShowWelcomeMessage(username, chatRoomName, memberInChatRoom)
       extendedRouterActorRef ! JoinMe(getMemberAddress)
 
     case Exit =>
@@ -51,8 +45,8 @@ private class ChatRoom(username: String, messageHandlerActor: ActorRef) extends 
 
   private def gracefulStop(): Unit = {
     userApi.removeUserFromChatRoomAsync(chatRoomName, username)
-    extendedRouterActor.get ! UserExit(getMemberAddress)
-    messageHandlerActor ! ShowExitMessage(chatRoomName, username)
+    if (extendedRouterActor.isDefined) extendedRouterActor.get ! UserExit(getMemberAddress)
+    messenger ! ShowExitMessage(chatRoomName, username)
     self ! PoisonPill
   }
 
@@ -71,9 +65,6 @@ private class ChatRoom(username: String, messageHandlerActor: ActorRef) extends 
   }
 }
 
-/**
-  * Companion object for the ChatRoom class.
-  */
 object ChatRoom {
   def props(username: String, messenger: ActorRef): Props = Props(new ChatRoom(username, messenger))
 

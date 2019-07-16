@@ -3,20 +3,15 @@ package unichat.utility
 import akka.actor.{Actor, ActorIdentity, ActorRef, Identify, Props, Terminated}
 import akka.routing._
 import unichat.user.ChatMessages.{JoinedUser, UnJoinedUser}
-import ExtendedRouter.{Failure, JoinMe, UserExit}
+import ExtendedRouter.{Failure, JoinMe, TerminatedActorNotification, UserExit}
 
 import scala.collection.immutable.Iterable
 
-/**
-  * Enhance the akka router (which will sends user's messages in broadcast to other peers).
-  * It redirects user's messages to the router itself and adds full Failure Detenction for remote users.
-  * @param remoteMembersLinks The paths of the other users joined in a chatroom
-  * @param memberInChatRoom The actor representing the user in a chatroom
-  */
-private class ExtendedRouter(remoteMembersLinks: Iterable[String], memberInChatRoom: ActorRef) extends Actor {
+class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends Actor {
 
-  private val router: ActorRef = context.actorOf(BroadcastGroup(remoteMembersLinks).props, "router")
+  private val router: ActorRef = context.actorOf(BroadcastGroup(paths).props, "router")
   private val identifyId = 1
+  private var suspiciousActors: Set[ActorRef] = Set.empty
 
   identifyRoutees()
 
@@ -36,9 +31,18 @@ private class ExtendedRouter(remoteMembersLinks: Iterable[String], memberInChatR
     case UnJoinedUser(userPath) =>
       router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userPath)))
 
+    case TerminatedActorNotification(suspicious, actorRef: ActorRef) =>
+      if (suspiciousActors != suspicious) {
+        suspiciousActors = suspiciousActors.filterNot(_ == sender) ++ suspicious
+      } else {
+        userInChatActor ! Failure(actorRef.path.name)
+        router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(actorRef.path)))
+        suspiciousActors = suspiciousActors.filterNot(_ == actorRef)
+      }
+
     case Terminated(actor) =>
-      memberInChatRoom ! Failure(actor.path.name)
-      router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(memberInChatRoom.path)))
+      suspiciousActors += actor
+      router ! Broadcast(TerminatedActorNotification(suspiciousActors, actor))
 
     case ActorIdentity(1, Some(ref)) =>
       context watch ref
@@ -46,20 +50,19 @@ private class ExtendedRouter(remoteMembersLinks: Iterable[String], memberInChatR
   }
 
   private def identifyRoutees(): Unit =
-    remoteMembersLinks.map(a => context.actorSelection(a)).foreach(u => {
+    paths.map(a => context.actorSelection(a)).foreach(u => {
       u ! Identify(identifyId)
     })
 }
 
-/**
-  * Companion object for the ExtendedRouter class
-  */
 object ExtendedRouter {
 
   val extendedRouterName = "extended-router-actor"
 
   def props(paths: Iterable[String], userInChat: ActorRef): Props =
     Props(new ExtendedRouter(paths, userInChat))
+
+  final case class TerminatedActorNotification(suspicious: Set[ActorRef], actorRef: ActorRef)
 
   final case class JoinMe(actorPath: String)
 

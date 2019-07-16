@@ -39,6 +39,9 @@ private class MemberInChatroom(localUsername: String, remoteMembersLinks: Seq[St
       removeReferenceOf(path)
       extendedRouterActor ! unJoin
 
+    case TerminatedActorNotification(suspicious, actorRef) =>
+      extendedRouterActor ! TerminatedActorNotification(suspicious, actorRef)
+
     case Failure(userInFailure) => removeReferenceOf(userInFailure)
 
   }
@@ -48,6 +51,7 @@ private class MemberInChatroom(localUsername: String, remoteMembersLinks: Seq[St
   * Companion object for the MemberInChatroom class
   */
 object MemberInChatroom {
+
   def props(username: String, paths: Seq[String], messenger: ActorRef): Props =
     Props(new MemberInChatroom(username, paths, messenger))
 
