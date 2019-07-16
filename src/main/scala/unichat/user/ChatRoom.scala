@@ -44,7 +44,7 @@ private class ChatRoom(username: String, messenger: ActorRef) extends Actor {
 
   private def gracefulStop(): Unit = {
     userApi.removeUserFromChatRoomAsync(chatRoomName, username)
-    extendedRouterActor.get ! UserExit(getMemberAddress)
+    if (extendedRouterActor.isDefined) extendedRouterActor.get ! UserExit(getMemberAddress)
     messenger ! ShowExitMessage(chatRoomName, username)
     self ! PoisonPill
   }

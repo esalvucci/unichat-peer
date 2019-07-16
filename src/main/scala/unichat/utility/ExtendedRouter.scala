@@ -3,7 +3,7 @@ package unichat.utility
 import akka.actor.{Actor, ActorIdentity, ActorRef, Identify, Props, Terminated}
 import akka.routing._
 import unichat.user.ChatMessages.{JoinedUser, UnJoinedUser}
-import ExtendedRouter.{Failure, JoinMe, UserExit}
+import ExtendedRouter.{Failure, JoinMe, TerminatedActorNotification, UserExit}
 
 import scala.collection.immutable.Iterable
 
@@ -11,6 +11,7 @@ class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends
 
   private val router: ActorRef = context.actorOf(BroadcastGroup(paths).props, "router")
   private val identifyId = 1
+  private var suspiciousActors: Set[ActorRef] = Set.empty
 
   identifyRoutees()
 
@@ -30,12 +31,27 @@ class ExtendedRouter(paths: Iterable[String], userInChatActor: ActorRef) extends
     case UnJoinedUser(userPath) =>
       router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userPath)))
 
+    case TerminatedActorNotification(suspicious, actorRef: ActorRef) =>
+      if (suspiciousActors != suspicious) {
+        suspiciousActors = suspiciousActors.filterNot(_ == sender) ++ suspicious
+        println("Added To other suspicious " + actorRef)
+      } else {
+        userInChatActor ! Failure(actorRef.path.name)
+        router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(actorRef.path)))
+        suspiciousActors = suspiciousActors.filterNot(_ == actorRef)
+        println("Removed " + actorRef)
+      }
+      println(suspiciousActors)
+
     case Terminated(actor) =>
-      userInChatActor ! Failure(actor.path.name)
-      router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userInChatActor.path)))
+      suspiciousActors += actor
+      router ! Broadcast(TerminatedActorNotification(suspiciousActors, actor))
+//      userInChatActor ! Failure(actor.path.name)
+//      router ! RemoveRoutee(ActorSelectionRoutee(context.actorSelection(userInChatActor.path)))
 
     case ActorIdentity(1, Some(ref)) =>
       context watch ref
+      println("I'm watching " + ref)
 
   }
 
@@ -51,6 +67,8 @@ object ExtendedRouter {
 
   def props(paths: Iterable[String], userInChat: ActorRef): Props =
     Props(new ExtendedRouter(paths, userInChat))
+
+  final case class TerminatedActorNotification(suspicious: Set[ActorRef], actorRef: ActorRef)
 
   final case class JoinMe(actorPath: String)
 

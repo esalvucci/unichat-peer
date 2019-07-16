@@ -33,12 +33,16 @@ private class MemberInChatroom(localUsername: String, paths: Seq[String], messen
       removeReferenceOf(path)
       extendedRouterActor ! unJoin
 
+    case TerminatedActorNotification(suspicious, actorRef) =>
+      extendedRouterActor ! TerminatedActorNotification(suspicious, actorRef)
+
     case Failure(userInFailure) => removeReferenceOf(userInFailure)
 
   }
 }
 
 object MemberInChatroom {
+
   def props(username: String, paths: Seq[String], messenger: ActorRef): Props =
     Props(new MemberInChatroom(username, paths, messenger))
 
