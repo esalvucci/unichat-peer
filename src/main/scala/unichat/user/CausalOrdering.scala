@@ -28,7 +28,7 @@ trait CausalOrdering extends Stash {
   /**
     * @return The matrix of the sent messages.
     */
-  def sentMessage(): Matrix = {
+  def sentMessages(): Matrix = {
     val currentMatrix: Matrix = Map.canBuildFrom(matrix).result()
     updateSentMessages()
     currentMatrix

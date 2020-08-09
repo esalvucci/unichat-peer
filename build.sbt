@@ -1,4 +1,4 @@
-name := "unichat"
+name := "unichat-peer"
 
 version := "0.1"
 

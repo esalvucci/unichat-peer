@@ -23,7 +23,7 @@ private class MessageHandler extends Actor with ActorLogging {
   private var memberInChatrooms: Map[String, ActorRef] = Map.empty
   private val joinPattern = "([0-9a-zA-Z]+)@([0-9a-zA-Z]+)".r
   private val exitPattern = "([0-9a-zA-Z]+)@exit".r
-  private val messagePattern = "@([0-9a-zA-Z]+):([0-9a-zA-Z|\\s]+)".r
+  private val messagePattern = "@([0-9a-zA-Z]+):([0-9a-zA-Z,.;|\\s]+)".r
 
   stdinSource.map(text => text.utf8String).runForeach(sendTypedText)
 

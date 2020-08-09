@@ -26,7 +26,7 @@ private class MemberInChatroom(localUsername: String, remoteMembersLinks: Seq[St
 
   override def receive: Receive = {
     case MessageInChat(content) =>
-      val matrix = sentMessage()
+      val matrix = sentMessages()
       extendedRouterActor ! Broadcast(BroadcastMessage(content, _username.get, matrix))
 
     case BroadcastMessage(content, user, senderMatrix) =>
